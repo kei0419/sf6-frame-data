@@ -629,16 +629,31 @@
                 let total = calcTotal(startup, active, recovery);
                 if (name.includes('ジャンプ')) total = '-';
 
+                let adv_pc = addAdv(hit, 4);
+                let notes = rm.notes || '-';
+                
+                // 「パニッシュカウンター時+XXF」表記をパニカン欄へ移し、備考欄から削除
+                const pcRegex = /(※?地上)?パニッシュカウンター[^、]*?([＋+]\s*\d+[Ff]?)/;
+                const match = notes.match(pcRegex);
+                if (match) {
+                    let valStr = match[2].replace(/[＋+]\s*/, '+').replace(/[Ff]/, '');
+                    adv_pc = valStr;
+                    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    notes = notes.replace(new RegExp(`(、\\s*)?${esc(match[0])}`), '');
+                    notes = notes.replace(/^、\s*/, '').trim();
+                    if (notes === '') notes = '-';
+                }
+
                 return {
                     name, cmd_c: rm.cmd_c || '-', damage: rm.damage || '-',
                     startup, active, total,
                     adv_guard: block, adv_hit: hit,
-                    adv_ch: addAdv(hit, 2), adv_pc: addAdv(hit, 4),
+                    adv_ch: addAdv(hit, 2), adv_pc: adv_pc,
                     adv_dr_guard: addAdv(block, 4), adv_dr_hit: addAdv(hit, 4),
                     cancel: rm.cancel !== undefined ? rm.cancel : '-',
                     attr: rm.attr || '-', type: rm.type || '通常技',
                     d_hit: rm.d_hit || '-', d_guard: rm.d_guard || '-', d_pc: rm.d_pc || '-',
-                    sa_gain: rm.sa_gain || '-', scaling: rm.scaling || '-', notes: rm.notes || '-',
+                    sa_gain: rm.sa_gain || '-', scaling: rm.scaling || '-', notes: notes,
                 };
             });
 
