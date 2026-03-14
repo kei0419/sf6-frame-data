@@ -639,6 +639,11 @@
                     let valStr = match[2].replace(/[＋+]\s*/, '+').replace(/[Ff]/, '');
                     adv_pc = valStr;
                 }
+                
+                // ただし「膝崩れ（膝くずれ）」表記を含む場合はパニカン欄を無表記(-)にする
+                if (notes.includes('パニッシュカウンター') && (notes.includes('膝崩れ') || notes.includes('膝くずれ'))) {
+                    adv_pc = '-';
+                }
 
                 return {
                     name, cmd_c: rm.cmd_c || '-', damage: rm.damage || '-',
