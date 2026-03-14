@@ -1,0 +1,18 @@
+{
+  "name": "SF6 Frame Data",
+  "short_name": "SF6 Frames",
+  "description": "Street Fighter 6 フレームデータビューア",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

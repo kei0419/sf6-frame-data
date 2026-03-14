@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SF6 Frames">
+    <meta name="description" content="Street Fighter 6 フレームデータビューア - オフライン対応PWA">
+    <title>SF6 Frame Data</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-512.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --bg-glass: rgba(30, 41, 59, 0.5);
+            --border: rgba(99, 102, 241, 0.15);
+            --border-active: rgba(99, 102, 241, 0.6);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --positive: #22c55e;
+            --negative: #ef4444;
+            --neutral: #eab308;
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+            --safe-left: env(safe-area-inset-left);
+            --safe-right: env(safe-area-inset-right);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+            padding-top: var(--safe-top);
+            padding-left: var(--safe-left);
+            padding-right: var(--safe-right);
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(30, 41, 59, 0.9));
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-left h1 {
+            font-size: 18px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .header-badge {
+            background: var(--accent);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 6px;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-glass);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:active {
+            background: rgba(99, 102, 241, 0.2);
+            transform: scale(0.96);
+        }
+
+        /* ── Container ── */
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+
+        /* ── Controls Panel ── */
+        .controls-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .controls-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: end;
+            margin-bottom: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .control-group label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .select-input,
+        .search-input {
+            padding: 10px 12px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            width: 100%;
+            min-height: 44px;
+            transition: border-color 0.2s;
+            -webkit-appearance: none;
+        }
+
+        .select-input:focus,
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* ── Collapsible Toggles ── */
+        .toggles-section {
+            margin-top: 10px;
+        }
+
+        .toggles-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 6px 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .toggles-header h4 {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toggles-header .chevron {
+            color: var(--text-muted);
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+
+        .toggles-header.collapsed .chevron {
+            transform: rotate(-90deg);
+        }
+
+        .toggles-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .toggles-content.collapsed {
+            max-height: 0 !important;
+        }
+
+        .column-toggles-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding-top: 6px;
+        }
+
+        .toggle-group {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(99, 102, 241, 0.08);
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+
+        .toggle-group-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .toggle-group .checkbox-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px 10px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            min-height: 32px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            accent-color: var(--accent);
+            width: 18px;
+            height: 18px;
+        }
+
+        /* ── Type Filter Chips ── */
+        .type-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .type-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+        }
+
+        .type-chip.active { opacity: 1; }
+        .type-chip.inactive { opacity: 0.35; filter: grayscale(0.5); }
+
+        .type-chip[data-type="通常技"] { background: rgba(99, 102, 241, 0.15); color: #818cf8; border-color: rgba(99, 102, 241, 0.3); }
+        .type-chip[data-type="特殊技"] { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border-color: rgba(6, 182, 212, 0.3); }
+        .type-chip[data-type="必殺技"] { background: rgba(249, 115, 22, 0.15); color: #fb923c; border-color: rgba(249, 115, 22, 0.3); }
+        .type-chip[data-type="スーパーアーツ"] { background: rgba(236, 72, 153, 0.15); color: #f472b6; border-color: rgba(236, 72, 153, 0.3); }
+        .type-chip[data-type="通常投げ"] { background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3); }
+        .type-chip[data-type="共通システム"] { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border-color: rgba(100, 116, 139, 0.3); }
+
+        /* ── Added Chars Tags ── */
+        .added-chars { margin-top: 8px; }
+
+        .tags-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #a5b4fc;
+        }
+
+        .tag-close {
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1;
+            min-width: 24px;
+            min-height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tag-close:active { color: var(--negative); }
+
+        .hidden { display: none !important; }
+
+        /* ── Table ── */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: auto;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            max-height: calc(100vh - 60px);
+            max-height: calc(100dvh - 60px);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .frame-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .frame-table thead th {
+            background: rgba(15, 23, 42, 0.98);
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding: 8px 6px;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            text-align: center;
+        }
+
+        .frame-table tbody tr {
+            border-bottom: 1px solid rgba(99, 102, 241, 0.06);
+        }
+
+        .frame-table tbody tr:active {
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .frame-table td {
+            padding: 6px;
+            white-space: nowrap;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .frame-table td.col-name {
+            color: var(--text-primary);
+            font-weight: 500;
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background: var(--bg-primary);
+            z-index: 5;
+            min-width: 100px;
+            max-width: 160px;
+            white-space: normal;
+            word-break: break-all;
+            line-height: 1.3;
+        }
+
+        .frame-table td.col-char-name {
+            color: var(--text-muted);
+            font-size: 10px;
+            text-align: left;
+        }
+
+        .frame-table td.col-wrap {
+            white-space: normal;
+            max-width: 200px;
+            font-size: 10px;
+            line-height: 1.3;
+        }
+
+        /* ── Type badges ── */
+        .type-badge {
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 9px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .type-badge.通常技 { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+        .type-badge.特殊技 { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+        .type-badge.必殺技 { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+        .type-badge.スーパーアーツ { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
+        .type-badge.通常投げ { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+        .type-badge.共通システム { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }
+
+        /* ── Advantage Colors ── */
+        .adv-positive { color: var(--positive) !important; font-weight: 600; }
+        .adv-negative { color: var(--negative) !important; }
+        .adv-zero { color: var(--neutral) !important; font-weight: 600; }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 16px;
+            padding-bottom: calc(16px + var(--safe-bottom));
+            color: var(--text-muted);
+            font-size: 11px;
+            border-top: 1px solid var(--border);
+            margin-top: 16px;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.2); border-radius: 2px; }
+
+        /* ── Mobile Responsive ── */
+        @media (max-width: 768px) {
+            .header { padding: 10px 12px; }
+            .header-left h1 { font-size: 16px; }
+            .container { padding: 8px; }
+            .controls-panel { padding: 10px; border-radius: 10px; }
+            .controls-row { flex-direction: column; gap: 8px; }
+            .control-group { min-width: 100%; }
+            .select-input, .search-input { font-size: 16px; } /* prevent iOS zoom */
+            .frame-table { font-size: 11px; }
+            .frame-table thead th { padding: 6px 4px; font-size: 9px; }
+            .frame-table td { padding: 5px 4px; font-size: 11px; }
+            .frame-table td.col-name { min-width: 80px; max-width: 120px; font-size: 11px; }
+            .type-badge { font-size: 8px; padding: 1px 5px; }
+            .table-container { border-radius: 10px; }
+            .toggle-group { padding: 6px 8px; }
+        }
+
+        /* ── Very small screens ── */
+        @media (max-width: 380px) {
+            .header-left h1 { font-size: 14px; }
+            .frame-table { font-size: 10px; }
+            .frame-table td.col-name { min-width: 70px; max-width: 100px; }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-left">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 3 22 12 19 21 5 21 2 12 5 3"></polygon>
+            </svg>
+            <h1>SF6 FRAME DATA</h1>
+            <span class="header-badge" id="charCount">–</span>
+        </div>
+        <div class="header-right">
+            <button class="btn" id="btn-add-char">＋</button>
+            <button class="btn" id="btn-top" title="トップへ">↑</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="controls-panel">
+            <div class="controls-row">
+                <div class="control-group">
+                    <label>キャラクター</label>
+                    <select id="main-char-select" class="select-input"></select>
+                </div>
+                <div class="control-group">
+                    <label>検索</label>
+                    <input type="text" id="search-input" class="search-input" placeholder="技名 / コマンドで検索...">
+                </div>
+                <div class="control-group">
+                    <label>並べ替え</label>
+                    <select id="sort-select" class="select-input">
+                        <option value="default">デフォルト</option>
+                        <option value="damage">ダメージ</option>
+                        <option value="startup">発生</option>
+                        <option value="active">持続</option>
+                        <option value="total">全体</option>
+                        <option value="adv_guard">ガード硬直差</option>
+                        <option value="adv_hit">ヒット硬直差</option>
+                        <option value="adv_ch">カウンター硬直差</option>
+                        <option value="adv_pc">パニカン硬直差</option>
+                        <option value="d_hit">Dヒット</option>
+                        <option value="d_guard">Dガード</option>
+                        <option value="sa_gain">SA増加</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="toggles-section">
+                <div class="toggles-header" id="type-toggle-header">
+                    <h4>技の種類</h4>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="toggles-content" id="type-toggle-content">
+                    <div class="type-chips" id="type-chips"></div>
+                </div>
+            </div>
+
+            <div class="toggles-section">
+                <div class="toggles-header collapsed" id="col-toggle-header">
+                    <h4>表示する列</h4>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="toggles-content collapsed" id="col-toggle-content" style="max-height:0">
+                    <div class="column-toggles-container" id="column-toggles"></div>
+                </div>
+            </div>
+
+            <div id="added-chars-container" class="added-chars hidden">
+                <h4 style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">比較中</h4>
+                <div class="tags-list" id="added-chars-list"></div>
+            </div>
+        </section>
+
+        <section class="table-container">
+            <table id="frame-table" class="frame-table">
+                <thead>
+                    <tr id="table-header-row"></tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer class="footer">SF6 Frame Data — PWA Edition</footer>
+
+    <script src="official_data.js"></script>
+
+    <script>
+        // ── Service Worker Registration ──
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(() => {});
+        }
+
+        // ── キャラ名マップ ──
+        const characterNames = {
+            "ryu": "リュウ", "luke": "ルーク", "jamie": "ジェイミー", "chunli": "春麗",
+            "guile": "ガイル", "kimberly": "キンバリー", "juri": "ジュリ", "ken": "ケン",
+            "blanka": "ブランカ", "dhalsim": "ダルシム", "ehonda": "E.本田",
+            "deejay": "ディージェイ", "manon": "マノン", "marisa": "マリーザ",
+            "jp": "JP", "zangief": "ザンギエフ", "lily": "リリー", "cammy": "キャミィ",
+            "rashid": "ラシード", "aki": "A.K.I.", "ed": "エド", "akuma": "豪鬼",
+            "m_bison": "ベガ", "terry": "テリー", "mai": "舞", "elena": "エレナ",
+            "sagat": "サガット", "cviper": "C.ヴァイパー",
+        };
+
+        // ── データパース ──
+        const rawData = window.officialData || {};
+        const characters = {};
+
+        const addAdv = (base, add) => {
+            if (base === undefined || base === null || base === '-' || base === '') return '-';
+            const n = parseInt(String(base).trim());
+            return isNaN(n) ? String(base).trim() : String(n + add);
+        };
+        const calcTotal = (s, a, r) => {
+            const ns = parseInt(s), na = parseInt(a), nr = parseInt(r);
+            return (!isNaN(ns) && !isNaN(na) && !isNaN(nr)) ? String(ns + na + nr - 1) : String(r || '-').trim();
+        };
+
+        Object.keys(rawData).forEach(key => {
+            let charId = key.replace('_frame', '');
+            if (charId === 'gouki_akuma') charId = 'akuma';
+            if (charId === 'vega_mbison') charId = 'm_bison';
+            const charName = characterNames[charId] || charId;
+            const rawMoves = Array.isArray(rawData[key]) ? rawData[key] : [];
+            if (rawMoves.length === 0) return;
+
+            const moves = rawMoves.map(rm => {
+                const name = rm.name || '-';
+                const hit = rm.hit !== undefined ? rm.hit : '-';
+                const block = rm.block !== undefined ? rm.block : '-';
+                const startup = rm.startup || '-';
+                const active = rm.active || '-';
+                const recovery = rm.recovery || '-';
+                let total = calcTotal(startup, active, recovery);
+                if (name.includes('ジャンプ')) total = '-';
+
+                return {
+                    name, cmd_c: rm.cmd_c || '-', damage: rm.damage || '-',
+                    startup, active, total,
+                    adv_guard: block, adv_hit: hit,
+                    adv_ch: addAdv(hit, 2), adv_pc: addAdv(hit, 4),
+                    adv_dr_guard: addAdv(block, 4), adv_dr_hit: addAdv(hit, 4),
+                    cancel: rm.cancel !== undefined ? rm.cancel : '-',
+                    attr: rm.attr || '-', type: rm.type || '通常技',
+                    d_hit: rm.d_hit || '-', d_guard: rm.d_guard || '-', d_pc: rm.d_pc || '-',
+                    sa_gain: rm.sa_gain || '-', scaling: rm.scaling || '-', notes: rm.notes || '-',
+                };
+            });
+
+            characters[charId] = { id: charId, name: charName, moves };
+        });
+
+        // ── Column Definitions ──
+        const isMobile = window.innerWidth <= 768;
+        const columnsDef = [
+            { id: 'type', label: '種類', group: '基本', defaultOn: !isMobile, isType: true },
+            { id: 'cmd_c', label: 'コマンド', group: '基本', defaultOn: true },
+            { id: 'damage', label: 'ダメージ', group: '基本', defaultOn: true },
+            { id: 'startup', label: '発生', group: 'フレーム', defaultOn: true },
+            { id: 'active', label: '持続', group: 'フレーム', defaultOn: !isMobile },
+            { id: 'total', label: '全体', group: 'フレーム', defaultOn: false },
+            { id: 'adv_guard', label: 'ガード', group: '硬直差', defaultOn: true, isAdv: true },
+            { id: 'adv_hit', label: 'ヒット', group: '硬直差', defaultOn: true, isAdv: true },
+            { id: 'adv_ch', label: 'カウンター', group: '硬直差', defaultOn: !isMobile, isAdv: true },
+            { id: 'adv_pc', label: 'パニカン', group: '硬直差', defaultOn: !isMobile, isAdv: true },
+            { id: 'adv_dr_guard', label: 'Dガード', group: '硬直差', defaultOn: false, isAdv: true },
+            { id: 'adv_dr_hit', label: 'Dヒット', group: '硬直差', defaultOn: false, isAdv: true },
+            { id: 'cancel', label: 'キャンセル', group: '属性', defaultOn: !isMobile },
+            { id: 'attr', label: '属性', group: '属性', defaultOn: !isMobile },
+            { id: 'd_hit', label: 'Dヒット', group: 'ドライブ', defaultOn: false },
+            { id: 'd_guard', label: 'Dガード', group: 'ドライブ', defaultOn: false },
+            { id: 'd_pc', label: 'Dパニカン', group: 'ドライブ', defaultOn: false },
+            { id: 'sa_gain', label: 'SA増加', group: 'SA', defaultOn: false },
+            { id: 'scaling', label: '補正', group: '補正', defaultOn: false },
+            { id: 'notes', label: '備考', group: '備考', defaultOn: !isMobile, isNotes: true },
+        ];
+
+        const moveTypes = ['通常技', '特殊技', '必殺技', 'スーパーアーツ', '通常投げ', '共通システム'];
+
+        // ── State ──
+        const savedState = (() => {
+            try { return JSON.parse(localStorage.getItem('sf6_state')) || {}; } catch { return {}; }
+        })();
+        const state = {
+            mainChar: savedState.mainChar || 'ed', addedChars: [], sortBy: 'default', searchQuery: '',
+            visibleColumns: {}, visibleTypes: ['通常技', '特殊技', '必殺技', 'スーパーアーツ', '通常投げ'],
+        };
+        columnsDef.forEach(c => { state.visibleColumns[c.id] = c.defaultOn; });
+
+        const saveState = () => {
+            try { localStorage.setItem('sf6_state', JSON.stringify({ mainChar: state.mainChar })); } catch {}
+        };
+
+        // ── Format helpers ──
+        const formatAdv = (val) => {
+            if (val === '-' || val === '' || val === undefined) return val || '-';
+            const n = parseInt(val);
+            return isNaN(n) ? val : (n > 0 ? `+${n}` : `${n}`);
+        };
+        const advClass = (val) => {
+            if (val === '-' || val === '' || val === undefined) return '';
+            const n = parseInt(val);
+            if (isNaN(n)) return '';
+            return n > 0 ? 'adv-positive' : n < 0 ? 'adv-negative' : 'adv-zero';
+        };
+
+        // ── Collapsible sections ──
+        function initCollapsible(headerId, contentId) {
+            const header = document.getElementById(headerId);
+            const content = document.getElementById(contentId);
+            header.addEventListener('click', () => {
+                header.classList.toggle('collapsed');
+                if (content.classList.contains('collapsed')) {
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                    content.classList.remove('collapsed');
+                } else {
+                    content.style.maxHeight = '0';
+                    content.classList.add('collapsed');
+                }
+            });
+            if (!content.classList.contains('collapsed')) {
+                content.style.maxHeight = content.scrollHeight + 'px';
+            }
+        }
+
+        // ── Init ──
+        document.addEventListener('DOMContentLoaded', () => {
+            const charList = Object.values(characters).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+            document.getElementById('charCount').textContent = `${charList.length}`;
+
+            const sel = document.getElementById('main-char-select');
+            sel.innerHTML = charList.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if (characters[state.mainChar]) sel.value = state.mainChar;
+            else if (charList.length > 0) { state.mainChar = charList[0].id; sel.value = state.mainChar; }
+
+            initTypeChips();
+            initColumnToggles();
+            initCollapsible('type-toggle-header', 'type-toggle-content');
+            initCollapsible('col-toggle-header', 'col-toggle-content');
+
+            sel.addEventListener('change', (e) => { state.mainChar = e.target.value; saveState(); renderTable(); });
+            document.getElementById('sort-select').addEventListener('change', (e) => { state.sortBy = e.target.value; renderTable(); });
+            document.getElementById('column-toggles').addEventListener('change', (e) => {
+                if (e.target.tagName === 'INPUT' && e.target.dataset.col) {
+                    state.visibleColumns[e.target.dataset.col] = e.target.checked;
+                    renderTable();
+                }
+            });
+            let t;
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                clearTimeout(t);
+                t = setTimeout(() => { state.searchQuery = e.target.value.trim().toLowerCase(); renderTable(); }, 150);
+            });
+            document.getElementById('btn-add-char').addEventListener('click', () => {
+                const avail = charList.filter(c => c.id !== state.mainChar && !state.addedChars.includes(c.id));
+                if (avail.length > 0) { state.addedChars.push(avail[0].id); renderAddedChars(); renderTable(); }
+            });
+            document.getElementById('btn-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+            renderTable();
+        });
+
+        function initTypeChips() {
+            const c = document.getElementById('type-chips');
+            c.innerHTML = moveTypes.map(t => {
+                const on = state.visibleTypes.includes(t);
+                return `<span class="type-chip ${on ? 'active' : 'inactive'}" data-type="${t}">${t}</span>`;
+            }).join('');
+            c.addEventListener('click', (e) => {
+                const chip = e.target.closest('.type-chip');
+                if (!chip) return;
+                const type = chip.dataset.type;
+                if (state.visibleTypes.includes(type)) {
+                    state.visibleTypes = state.visibleTypes.filter(t => t !== type);
+                    chip.classList.replace('active', 'inactive');
+                } else {
+                    state.visibleTypes.push(type);
+                    chip.classList.replace('inactive', 'active');
+                }
+                renderTable();
+            });
+        }
+
+        function initColumnToggles() {
+            const c = document.getElementById('column-toggles');
+            const g = {};
+            columnsDef.forEach(col => { (g[col.group] = g[col.group] || []).push(col); });
+            let h = '';
+            for (const gn in g) {
+                h += `<div class="toggle-group"><h5 class="toggle-group-title">${gn}</h5><div class="checkbox-grid">`;
+                h += g[gn].map(col => `<label class="checkbox-label"><input type="checkbox" data-col="${col.id}" ${state.visibleColumns[col.id] ? 'checked' : ''}> ${col.label}</label>`).join('');
+                h += '</div></div>';
+            }
+            c.innerHTML = h;
+        }
+
+        function renderAddedChars() {
+            const container = document.getElementById('added-chars-container');
+            const list = document.getElementById('added-chars-list');
+            if (state.addedChars.length === 0) { container.classList.add('hidden'); return; }
+            container.classList.remove('hidden');
+            list.innerHTML = state.addedChars.map(id => {
+                const ch = characters[id];
+                return `<span class="tag">${ch ? ch.name : id}<span class="tag-close" data-id="${id}">×</span></span>`;
+            }).join('');
+            list.querySelectorAll('.tag-close').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    state.addedChars = state.addedChars.filter(id => id !== e.target.dataset.id);
+                    renderAddedChars();
+                    renderTable();
+                });
+            });
+        }
+
+        function renderTable() {
+            const headerRow = document.getElementById('table-header-row');
+            const tbody = document.getElementById('table-body');
+            const activeCols = columnsDef.filter(c => state.visibleColumns[c.id]);
+
+            let th = '<th>キャラ</th><th>技名</th>';
+            activeCols.forEach(col => { th += `<th>${col.label}</th>`; });
+            headerRow.innerHTML = th;
+
+            let allMoves = [];
+            [state.mainChar, ...state.addedChars].forEach(charId => {
+                const cd = characters[charId];
+                if (!cd) return;
+                cd.moves.forEach((move, idx) => {
+                    if (!state.visibleTypes.includes(move.type)) return;
+                    if (state.searchQuery && !move.name.toLowerCase().includes(state.searchQuery) && !(move.cmd_c || '').toLowerCase().includes(state.searchQuery)) return;
+                    allMoves.push({ charName: cd.name, ...move, _idx: idx });
+                });
+            });
+
+            if (state.sortBy !== 'default') {
+                const pv = (v) => { if (v == null || v === '-' || v === '') return null; const m = String(v).trim().match(/^(-?\d+)/); return m ? parseInt(m[1]) : null; };
+                allMoves.sort((a, b) => {
+                    let va = pv(a[state.sortBy]), vb = pv(b[state.sortBy]);
+                    if (va === null && vb === null) return 0;
+                    if (va === null) return 1;
+                    if (vb === null) return -1;
+                    return ['startup', 'active', 'total'].includes(state.sortBy) ? va - vb : vb - va;
+                });
+            }
+
+            if (allMoves.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${activeCols.length + 2}" style="text-align:center;padding:40px;color:var(--text-muted);">該当する技がありません</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            allMoves.forEach(move => {
+                html += '<tr>';
+                html += `<td class="col-char-name">${move.charName}</td>`;
+                html += `<td class="col-name">${move.name}</td>`;
+                activeCols.forEach(col => {
+                    let val = move[col.id] !== undefined ? move[col.id] : '-';
+                    let cls = '', display = val;
+                    if (col.isAdv) { display = formatAdv(val); cls = advClass(val); }
+                    else if (col.isType) { display = `<span class="type-badge ${val}">${val}</span>`; }
+                    else if (col.isNotes) { cls = 'col-wrap'; if (typeof display === 'string') display = display.replace(/、 /g, '<br>'); }
+                    html += `<td class="${cls}">${display}</td>`;
+                });
+                html += '</tr>';
+            });
+            tbody.innerHTML = html;
+        }
+    </script>
+</body>
+
+</html>
