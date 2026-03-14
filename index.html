@@ -632,16 +632,12 @@
                 let adv_pc = addAdv(hit, 4);
                 let notes = rm.notes || '-';
                 
-                // 「パニッシュカウンター時+XXF」表記をパニカン欄へ移し、備考欄から削除
+                // 「パニッシュカウンター時+XXF」表記から数値を抽出（備考欄のテキストはそのまま残す）
                 const pcRegex = /(※?地上)?パニッシュカウンター[^、]*?([＋+]\s*\d+[Ff]?)/;
                 const match = notes.match(pcRegex);
                 if (match) {
                     let valStr = match[2].replace(/[＋+]\s*/, '+').replace(/[Ff]/, '');
                     adv_pc = valStr;
-                    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    notes = notes.replace(new RegExp(`(、\\s*)?${esc(match[0])}`), '');
-                    notes = notes.replace(/^、\s*/, '').trim();
-                    if (notes === '') notes = '-';
                 }
 
                 return {
