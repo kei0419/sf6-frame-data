@@ -688,7 +688,32 @@
                     activeNote = `※持続内訳: ${activeNote}`;
                 }
 
-                let total = calcTotal(startup, active, recovery);
+                let activeDisplay = active;
+                let total = '-';
+                const recNum = parseInt(recovery);
+
+                const mRange = active.match(/^(\d+)-(\d+)$/);
+                if (mRange) {
+                    const actStart = parseInt(mRange[1]);
+                    const actEnd = parseInt(mRange[2]);
+                    activeDisplay = String(actEnd - actStart + 1);
+                    if (!isNaN(recNum)) {
+                        total = String(actEnd + recNum);
+                    }
+                } else {
+                    const actNum = parseInt(active);
+                    if (!isNaN(actNum)) {
+                        if (/^\d+$/.test(active)) {
+                            activeDisplay = '1';
+                        }
+                        if (!isNaN(recNum)) {
+                            total = String(actNum + recNum);
+                        }
+                    } else if (!isNaN(recNum)) {
+                        total = String(recNum);
+                    }
+                }
+
                 if (name.includes('ジャンプ')) total = '-';
 
                 let adv_pc = addAdv(hit, 4);
@@ -714,7 +739,7 @@
 
                 return {
                     name, cmd_c: rm.cmd_c || '-', damage: rm.damage || '-',
-                    startup, active, total,
+                    startup, active: activeDisplay, total,
                     adv_guard: block, adv_hit: hit,
                     adv_ch: addAdv(hit, 2), adv_pc: adv_pc,
                     adv_dr_guard: addAdv(block, 4), adv_dr_hit: addAdv(hit, 4),
