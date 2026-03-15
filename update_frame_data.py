@@ -141,6 +141,16 @@ def parse_move_name(td):
                 t = child.strip()
                 if t: tokens.append(("TEXT", t))
 
+        # 冗長な強度のテキスト("弱", "中", "強")をフィルタリング
+        # (例: [kick_hアイコン(強K)] の直後に "強" というテキストが続く場合)
+        filtered_tokens = []
+        for i, (ttype, tval) in enumerate(tokens):
+            if ttype == "TEXT" and tval in ("弱", "中", "強"):
+                if i > 0 and tokens[i-1][0] == "BTN" and tokens[i-1][1].startswith(tval):
+                    continue
+            filtered_tokens.append((ttype, tval))
+        tokens = filtered_tokens
+
         # トークンを結合してコマンド文字列を生成
         # ルール:
         #   DIR同士は隣接して結合 (236, 214, etc.)
