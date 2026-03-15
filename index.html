@@ -624,8 +624,70 @@
                 const hit = rm.hit !== undefined ? rm.hit : '-';
                 const block = rm.block !== undefined ? rm.block : '-';
                 const startup = rm.startup || '-';
-                const active = rm.active || '-';
+                let active = rm.active || '-';
                 const recovery = rm.recovery || '-';
+
+                // キャプコン公式データ特有の持続表記対策 (例: "11-2911-13, 17-19, 26-29" -> "11-29"と後続の注釈に分離)
+                let activeNote = '';
+                const m = active.match(/^(\d+(?:-\d+)?)/);
+                if (m) {
+                    const baseStr = m[1]; // 例: "11-2911" まで最初に長くマッチしてしまうので調整
+                    // 発生(startup)と同じ数字で始まる注釈がくっついているケースが多い (あるいは単純に持続の開始フレーム)
+                    // 一旦正規表現ではなく、"-"で区切って文字列の妥当性を確認する
+                    const hyphenIdx = active.indexOf('-');
+                    if (hyphenIdx !== -1) {
+                        // 次の - や , が来るまでの数字の塊を探す
+                        const matchNext = active.substring(hyphenIdx + 1).match(/^\d+/);
+                        if (matchNext) {
+                            const endFrameStr = matchNext[0];
+                            const extractedBase = active.substring(0, hyphenIdx + 1 + endFrameStr.length);
+                            const remaining = active.substring(extractedBase.length);
+                            
+                            // "11-2911"のようになっていたら、"11-29"と"11"に分ける (大抵後ろの数字の桁数は2か1)
+                            // remainingの先頭が数字(例:"-13")なら、extractedBaseの末尾の数字を削るかどうか判定
+                            if (remaining && /^\s*-/.test(remaining) && extractedBase.length > 3) {
+                                // "11-29" + "11" + "-13..." みたいなケース
+                                const matchOverlap = extractedBase.match(/^(\d+-\d{1,2})(\d{1,2})$/);
+                                if (matchOverlap) {
+                                    active = matchOverlap[1];
+                                    activeNote = matchOverlap[2] + remaining;
+                                } else {
+                                    active = extractedBase;
+                                    activeNote = remaining;
+                                }
+                            } else if (remaining && /^\s*,/.test(remaining) && extractedBase.length > 3) {
+                                // "13-4413" + ", 18..." みたいなケース
+                                const matchOverlap = extractedBase.match(/^(\d+-\d{1,2})(\d{1,2})$/);
+                                if (matchOverlap) {
+                                    active = matchOverlap[1];
+                                    activeNote = matchOverlap[2] + remaining;
+                                } else {
+                                    active = extractedBase;
+                                    activeNote = remaining;
+                                }
+                            } else {
+                                active = extractedBase;
+                                activeNote = remaining;
+                            }
+                        }
+                    } else {
+                        // ハイフンがない場合 (例:"13")
+                        const matchSolo = active.match(/^(\d+)/);
+                        if (matchSolo) {
+                            const extractedBase = matchSolo[1];
+                            const remaining = active.substring(extractedBase.length);
+                            active = extractedBase;
+                            activeNote = remaining;
+                        }
+                    }
+                }
+
+                // 先頭や末尾の空白カンマなどを掃除
+                activeNote = activeNote.replace(/^[\s,]+/, '').trim();
+                if (activeNote) {
+                    activeNote = `※持続内訳: ${activeNote}`;
+                }
+
                 let total = calcTotal(startup, active, recovery);
                 if (name.includes('ジャンプ')) total = '-';
 
@@ -638,6 +700,11 @@
                 if (match) {
                     let valStr = match[2].replace(/[＋+]\s*/, '+').replace(/[Ff]/, '');
                     adv_pc = valStr;
+                }
+
+                // 備考欄に持続内訳を追記
+                if (activeNote) {
+                    notes = notes === '-' ? activeNote : (notes + ' / ' + activeNote);
                 }
                 
                 // ただし「膝崩れ（膝くずれ）」表記を含む場合はパニカン欄を無表記(-)にする
