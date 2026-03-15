@@ -165,35 +165,31 @@ def parse_move_name(td):
             prev_type, prev_val = tokens[i - 1]
             
             if ttype == "DIR":
-                # 方向キー同士、または＋や＞、・の直後はそのまま
-                if prev_type in ("DIR", "PLUS", "ARROW") or (prev_type == "TEXT" and prev_val == "・"):
+                # 方向キー同士、または＋や＞の直後はそのまま
+                if prev_type in ("DIR", "PLUS", "ARROW"):
                     result += tval
                 else:
                     result += tval
-            elif ttype in ("PLUS", "ARROW") or (ttype == "TEXT" and tval in ("・", ">", "＞", "＋", "+")):
+            elif ttype in ("PLUS", "ARROW") or (ttype == "TEXT" and tval in (">", "＞", "＋", "+")):
                 # 記号は詰める
                 result += tval
             elif ttype == "BTN":
                 if prev_type == "DIR":
                     result += "＋" + tval
                 elif prev_type == "BTN":
-                    # 同一ボタンの連続(ODなど)は詰め、それ以外は・で繋ぐ
-                    if len(tval) == 1 and len(prev_val) == 1 and tval == prev_val:
-                        result += tval
-                    else:
-                        if prev_val.endswith("P") or prev_val.endswith("K"):
-                            result += "・" + tval
-                        else:
-                            result += tval
-                elif prev_type in ("PLUS", "ARROW") or (prev_type == "TEXT" and prev_val == "・"):
+                    # ボタン同士は常に詰める
+                    result += tval
+                elif prev_type in ("PLUS", "ARROW"):
                     result += tval
                 else:
-                    result += "・" + tval
+                    result += tval # その他も詰める
             else:  # TEXT
-                if prev_type in ("PLUS", "ARROW") or (prev_type == "TEXT" and prev_val == "・"):
+                if prev_type in ("PLUS", "ARROW", "DIR"):
+                    result += tval
+                elif tval.startswith("["): # [溜] など
                     result += tval
                 else:
-                    result += " " + tval
+                    result += tval # 基本的に全て詰める
         cmd = result
 
     return name, cmd
