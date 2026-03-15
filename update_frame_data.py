@@ -103,46 +103,51 @@ def parse_move_name(td):
     name_span = td.find("span", class_=lambda c: c and "arts" in c)
     name = name_span.get_text(strip=True) if name_span else td.get_text(strip=True)
 
-    cmd_p = td.find("p", class_=lambda c: c and "classic" in c)
+    cmd_ps = td.find_all("p", class_=lambda c: c and "classic" in c)
     cmd = ""
-    if cmd_p:
-        # imgタグのsrc属性からコマンド入力をトークンとして収集
-        # トークンの種類: DIR(方向), PLUS(＋記号), ARROW(＞記号), BTN(ボタン), TEXT(テキスト)
+    if cmd_ps:
+        # すべてのclassicコマンドpタグからトークンを収集
         tokens = []
-        for child in cmd_p.children:
-            if hasattr(child, "name") and child.name == "img":
-                alt = child.get("alt", "")
-                src = child.get("src", "")
-                if "key-d.png" in src:     tokens.append(("DIR", "2"))
-                elif "key-dr.png" in src:  tokens.append(("DIR", "3"))
-                elif "key-dl.png" in src:  tokens.append(("DIR", "1"))
-                elif "key-r.png" in src:   tokens.append(("DIR", "6"))
-                elif "key-l.png" in src:   tokens.append(("DIR", "4"))
-                elif "key-u.png" in src:   tokens.append(("DIR", "8"))
-                elif "key-ur.png" in src:  tokens.append(("DIR", "9"))
-                elif "key-ul.png" in src:  tokens.append(("DIR", "7"))
-                elif "key-plus.png" in src: tokens.append(("PLUS", "＋"))
-                elif "key-lc" in src:      tokens.append(("TEXT", "[溜め]"))
-                elif "key-dc" in src:      tokens.append(("TEXT", "[溜め]"))
-                elif "arrow_3" in src:     tokens.append(("ARROW", "＞"))
-                elif "punch_l" in src:     tokens.append(("BTN", "弱P"))
-                elif "punch_m" in src:     tokens.append(("BTN", "中P"))
-                elif "punch_h" in src:     tokens.append(("BTN", "強P"))
-                elif "kick_l" in src:      tokens.append(("BTN", "弱K"))
-                elif "kick_m" in src:      tokens.append(("BTN", "中K"))
-                elif "kick_h" in src:      tokens.append(("BTN", "強K"))
-                elif "punch.png" in src:   tokens.append(("BTN", "PP"))
-                elif "kick.png" in src:    tokens.append(("BTN", "KK"))
-                elif alt:                  tokens.append(("TEXT", alt))
-            elif hasattr(child, "string") and child.string:
-                t = child.string.strip()
-                if t: tokens.append(("TEXT", t))
-            elif isinstance(child, str):
-                t = child.strip()
-                if t: tokens.append(("TEXT", t))
+        for cmd_p in cmd_ps:
+            # 複数のpタグがある場合、タグ間にARROW(＞)がないなら自動でARROWを追加することを検討するか、
+            # あるいは単にトークンを繋げる。大抵はpタグ内にすべての遷移が含まれるはずだが、
+            # 分かれているケース(EdのSA1など)への対策。
+            for child in cmd_p.children:
+                if hasattr(child, "name") and child.name == "img":
+                    src = child.get("src", "")
+                    alt = child.get("alt", "")
+                    if "key-d.png" in src:     tokens.append(("DIR", "2"))
+                    elif "key-dr.png" in src:  tokens.append(("DIR", "3"))
+                    elif "key-dl.png" in src:  tokens.append(("DIR", "1"))
+                    elif "key-r.png" in src:   tokens.append(("DIR", "6"))
+                    elif "key-l.png" in src:   tokens.append(("DIR", "4"))
+                    elif "key-u.png" in src:   tokens.append(("DIR", "8"))
+                    elif "key-ur.png" in src:  tokens.append(("DIR", "9"))
+                    elif "key-ul.png" in src:  tokens.append(("DIR", "7"))
+                    elif "key-plus.png" in src: tokens.append(("PLUS", "＋"))
+                    elif "key-lc" in src:      tokens.append(("TEXT", "[溜]"))
+                    elif "key-dc" in src:      tokens.append(("TEXT", "[溜]"))
+                    elif "arrow_3" in src:     tokens.append(("ARROW", "＞"))
+                    elif "punch_l" in src:     tokens.append(("BTN", "弱P"))
+                    elif "punch_m" in src:     tokens.append(("BTN", "中P"))
+                    elif "punch_h" in src:     tokens.append(("BTN", "強P"))
+                    elif "kick_l" in src:      tokens.append(("BTN", "弱K"))
+                    elif "kick_m" in src:      tokens.append(("BTN", "中K"))
+                    elif "kick_h" in src:      tokens.append(("BTN", "強K"))
+                    elif "punch.png" in src:   tokens.append(("BTN", "P"))
+                    elif "kick.png" in src:    tokens.append(("BTN", "K"))
+                    elif alt:                  tokens.append(("TEXT", alt))
+                elif hasattr(child, "string") and child.string:
+                    t = child.string.strip()
+                    if t: tokens.append(("TEXT", t))
+                elif isinstance(child, str):
+                    t = child.strip()
+                    if t: tokens.append(("TEXT", t))
+
+        # トークンリストのクリーンアップ: 空文字や空白のみのテキストを除去
+        tokens = [(ttype, tval) for ttype, tval in tokens if tval.strip()]
 
         # 冗長な強度のテキスト("弱", "中", "強")をフィルタリング
-        # (例: [kick_hアイコン(強K)] の直後に "強" というテキストが続く場合)
         filtered_tokens = []
         for i, (ttype, tval) in enumerate(tokens):
             if ttype == "TEXT" and tval in ("弱", "中", "強"):
@@ -152,35 +157,43 @@ def parse_move_name(td):
         tokens = filtered_tokens
 
         # トークンを結合してコマンド文字列を生成
-        # ルール:
-        #   DIR同士は隣接して結合 (236, 214, etc.)
-        #   PLUS(＋)は前後にスペースなしで結合
-        #   ARROW(＞)は前後にスペースなしで結合
-        #   BTN/TEXT は前にスペースを入れて区切る (ただし直前がPLUSやARROWならスペースなし)
         result = ""
         for i, (ttype, tval) in enumerate(tokens):
             if i == 0:
                 result = tval
                 continue
-            prev_type = tokens[i - 1][0]
+            prev_type, prev_val = tokens[i - 1]
+            
             if ttype == "DIR":
+                # 方向キー同士、または＋や＞、・の直後はそのまま
+                if prev_type in ("DIR", "PLUS", "ARROW") or (prev_type == "TEXT" and prev_val == "・"):
+                    result += tval
+                else:
+                    result += tval
+            elif ttype in ("PLUS", "ARROW") or (ttype == "TEXT" and tval in ("・", ">", "＞", "＋", "+")):
+                # 記号は詰める
+                result += tval
+            elif ttype == "BTN":
                 if prev_type == "DIR":
-                    result += tval  # 方向同士はそのまま結合
-                elif prev_type in ("PLUS", "ARROW"):
-                    result += tval  # ＋や＞の直後もスペースなし
+                    result += "＋" + tval
+                elif prev_type == "BTN":
+                    # 同一ボタンの連続(ODなど)は詰め、それ以外は・で繋ぐ
+                    if len(tval) == 1 and len(prev_val) == 1 and tval == prev_val:
+                        result += tval
+                    else:
+                        if prev_val.endswith("P") or prev_val.endswith("K"):
+                            result += "・" + tval
+                        else:
+                            result += tval
+                elif prev_type in ("PLUS", "ARROW") or (prev_type == "TEXT" and prev_val == "・"):
+                    result += tval
                 else:
-                    result += tval  # テンキー表記は常に前にスペースなし
-            elif ttype == "PLUS":
-                result += tval  # ＋は常にスペースなし
-            elif ttype == "ARROW":
-                result += tval  # ＞は常にスペースなし
-            elif ttype in ("BTN", "TEXT"):
-                if prev_type in ("PLUS", "ARROW"):
-                    result += tval  # ＋や＞の直後はスペースなし
-                elif prev_type == "DIR":
-                    result += "＋" + tval  # 方向の直後のボタンは＋で結合
+                    result += "・" + tval
+            else:  # TEXT
+                if prev_type in ("PLUS", "ARROW") or (prev_type == "TEXT" and prev_val == "・"):
+                    result += tval
                 else:
-                    result += "＞" + tval  # ボタン同士は＞で結合
+                    result += " " + tval
         cmd = result
 
     return name, cmd
