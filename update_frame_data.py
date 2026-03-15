@@ -138,6 +138,20 @@ def parse_move_name(td):
                 t = child.strip()
                 if t: parts.append(t)
         cmd = " ".join(p for p in parts if p)
+        # Numpad notation replacements for arrows
+        cmd = cmd.replace("2+ 3+ 6+", "236")
+        cmd = cmd.replace("2+ 1+ 4+", "214")
+        cmd = cmd.replace("6+ 2+ 3+", "623")
+        cmd = cmd.replace("4+ 2+ 1+", "421")
+        cmd = cmd.replace("6+ 3+ 2+ 1+ 4+", "63214")
+        cmd = cmd.replace("4+ 1+ 2+ 3+ 6+", "41236")
+        cmd = cmd.replace("2+ 6+", "236")  # fallback if no diagonals
+        cmd = cmd.replace("2+ 4+", "214")
+        cmd = cmd.replace("6+ 4+ 6+", "646")
+        cmd = cmd.replace("4+ 6+ 4+ 6+", "4646")
+        cmd = cmd.replace("2+ 8+", "28")
+        cmd = cmd.replace("4+ 6+", "46")
+        cmd = cmd.replace("+", "") # Remove any remaining pluses from directionals
         cmd = re.sub(r'\s+', ' ', cmd).strip()
 
     return name, cmd

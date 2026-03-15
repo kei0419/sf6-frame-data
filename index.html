@@ -625,6 +625,9 @@
                 const block = rm.block !== undefined ? rm.block : '-';
                 const startup = rm.startup || '-';
                 let active = rm.active || '-';
+                if (typeof active === 'string') {
+                    active = active.replace(/(\d+)\s*-\s*(\d+)/g, '$1-$2');
+                }
                 const recovery = rm.recovery || '-';
 
                 // キャプコン公式データ特有の持続表記対策 (例: "11-2911-13, 17-19, 26-29" -> "11-29"と後続の注釈に分離)
