@@ -106,53 +106,72 @@ def parse_move_name(td):
     cmd_p = td.find("p", class_=lambda c: c and "classic" in c)
     cmd = ""
     if cmd_p:
-        # imgタグのalt属性からコマンド入力を再現
-        parts = []
+        # imgタグのsrc属性からコマンド入力をトークンとして収集
+        # トークンの種類: DIR(方向), PLUS(＋記号), ARROW(＞記号), BTN(ボタン), TEXT(テキスト)
+        tokens = []
         for child in cmd_p.children:
             if hasattr(child, "name") and child.name == "img":
                 alt = child.get("alt", "")
                 src = child.get("src", "")
-                if "key-d.png" in src: parts.append("2+")
-                elif "key-dr.png" in src: parts.append("")  # 236の一部
-                elif "key-dl.png" in src: parts.append("")  # 214の一部
-                elif "key-r.png" in src: parts.append("6+")
-                elif "key-l.png" in src: parts.append("4+")
-                elif "key-u.png" in src: parts.append("8+")
-                elif "key-plus.png" in src: parts.append("")
-                elif "key-lc" in src: parts.append("[key-lc]")
-                elif "key-dc" in src: parts.append("[key-dc]")
-                elif "arrow_3" in src: parts.append(">")
-                elif "punch_l" in src: parts.append("弱P")
-                elif "punch_m" in src: parts.append("中P")
-                elif "punch_h" in src: parts.append("強P")
-                elif "kick_l" in src: parts.append("弱K")
-                elif "kick_m" in src: parts.append("中K")
-                elif "kick_h" in src: parts.append("強K")
-                elif "punch.png" in src: parts.append("P P")
-                elif "kick.png" in src: parts.append("K K")
-                elif alt: parts.append(alt)
+                if "key-d.png" in src:     tokens.append(("DIR", "2"))
+                elif "key-dr.png" in src:  tokens.append(("DIR", "3"))
+                elif "key-dl.png" in src:  tokens.append(("DIR", "1"))
+                elif "key-r.png" in src:   tokens.append(("DIR", "6"))
+                elif "key-l.png" in src:   tokens.append(("DIR", "4"))
+                elif "key-u.png" in src:   tokens.append(("DIR", "8"))
+                elif "key-ur.png" in src:  tokens.append(("DIR", "9"))
+                elif "key-ul.png" in src:  tokens.append(("DIR", "7"))
+                elif "key-plus.png" in src: tokens.append(("PLUS", "＋"))
+                elif "key-lc" in src:      tokens.append(("TEXT", "[溜め]"))
+                elif "key-dc" in src:      tokens.append(("TEXT", "[溜め]"))
+                elif "arrow_3" in src:     tokens.append(("ARROW", "＞"))
+                elif "punch_l" in src:     tokens.append(("BTN", "弱P"))
+                elif "punch_m" in src:     tokens.append(("BTN", "中P"))
+                elif "punch_h" in src:     tokens.append(("BTN", "強P"))
+                elif "kick_l" in src:      tokens.append(("BTN", "弱K"))
+                elif "kick_m" in src:      tokens.append(("BTN", "中K"))
+                elif "kick_h" in src:      tokens.append(("BTN", "強K"))
+                elif "punch.png" in src:   tokens.append(("BTN", "PP"))
+                elif "kick.png" in src:    tokens.append(("BTN", "KK"))
+                elif alt:                  tokens.append(("TEXT", alt))
             elif hasattr(child, "string") and child.string:
                 t = child.string.strip()
-                if t: parts.append(t)
+                if t: tokens.append(("TEXT", t))
             elif isinstance(child, str):
                 t = child.strip()
-                if t: parts.append(t)
-        cmd = " ".join(p for p in parts if p)
-        # Numpad notation replacements for arrows
-        cmd = cmd.replace("2+ 3+ 6+", "236")
-        cmd = cmd.replace("2+ 1+ 4+", "214")
-        cmd = cmd.replace("6+ 2+ 3+", "623")
-        cmd = cmd.replace("4+ 2+ 1+", "421")
-        cmd = cmd.replace("6+ 3+ 2+ 1+ 4+", "63214")
-        cmd = cmd.replace("4+ 1+ 2+ 3+ 6+", "41236")
-        cmd = cmd.replace("2+ 6+", "236")  # fallback if no diagonals
-        cmd = cmd.replace("2+ 4+", "214")
-        cmd = cmd.replace("6+ 4+ 6+", "646")
-        cmd = cmd.replace("4+ 6+ 4+ 6+", "4646")
-        cmd = cmd.replace("2+ 8+", "28")
-        cmd = cmd.replace("4+ 6+", "46")
-        cmd = cmd.replace("+", "") # Remove any remaining pluses from directionals
-        cmd = re.sub(r'\s+', ' ', cmd).strip()
+                if t: tokens.append(("TEXT", t))
+
+        # トークンを結合してコマンド文字列を生成
+        # ルール:
+        #   DIR同士は隣接して結合 (236, 214, etc.)
+        #   PLUS(＋)は前後にスペースなしで結合
+        #   ARROW(＞)は前後にスペースなしで結合
+        #   BTN/TEXT は前にスペースを入れて区切る (ただし直前がPLUSやARROWならスペースなし)
+        result = ""
+        for i, (ttype, tval) in enumerate(tokens):
+            if i == 0:
+                result = tval
+                continue
+            prev_type = tokens[i - 1][0]
+            if ttype == "DIR":
+                if prev_type == "DIR":
+                    result += tval  # 方向同士はそのまま結合
+                elif prev_type in ("PLUS", "ARROW"):
+                    result += tval  # ＋や＞の直後もスペースなし
+                else:
+                    result += tval  # テンキー表記は常に前にスペースなし
+            elif ttype == "PLUS":
+                result += tval  # ＋は常にスペースなし
+            elif ttype == "ARROW":
+                result += tval  # ＞は常にスペースなし
+            elif ttype in ("BTN", "TEXT"):
+                if prev_type in ("PLUS", "ARROW"):
+                    result += tval  # ＋や＞の直後はスペースなし
+                elif prev_type == "DIR":
+                    result += "＋" + tval  # 方向の直後のボタンは＋で結合
+                else:
+                    result += "＞" + tval  # ボタン同士は＞で結合
+        cmd = result
 
     return name, cmd
 
