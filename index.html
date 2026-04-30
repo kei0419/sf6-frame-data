@@ -735,8 +735,8 @@
                     notes = notes === '-' ? activeNote : (notes + ' / ' + activeNote);
                 }
                 
-                // ただし「膝崩れ（膝くずれ）」表記を含む場合はパニカン欄を無表記(-)にする
-                if (notes.includes('パニッシュカウンター') && (notes.includes('膝崩れ') || notes.includes('膝くずれ'))) {
+                // ただし「膝崩れ」や「吹き飛びダウン」表記を含む場合はパニカン欄を無表記(-)にする
+                if (notes.includes('パニッシュカウンター') && (notes.includes('膝崩れ') || notes.includes('膝くずれ') || notes.includes('吹き飛びダウン'))) {
                     adv_pc = '-';
                 }
 
