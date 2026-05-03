@@ -693,7 +693,8 @@
 
                 let activeDisplay = active;
                 let total = '-';
-                const recNum = parseInt(recovery);
+                const recMatch = String(recovery).match(/(\d+)/);
+                const recNum = recMatch ? parseInt(recMatch[1]) : NaN;
 
                 const mRange = active.match(/^(\d+)-(\d+)$/);
                 if (mRange) {
