@@ -790,12 +790,21 @@
         })();
         const state = {
             mainChar: savedState.mainChar || 'ed', addedChars: [], sortBy: 'default', searchQuery: '',
-            visibleColumns: {}, visibleTypes: ['通常技', '特殊技', '必殺技', 'スーパーアーツ', '通常投げ'],
+            visibleColumns: savedState.visibleColumns || {},
+            visibleTypes: savedState.visibleTypes || ['通常技', '特殊技', '必殺技', 'スーパーアーツ', '通常投げ'],
         };
-        columnsDef.forEach(c => { state.visibleColumns[c.id] = c.defaultOn; });
+        if (Object.keys(state.visibleColumns).length === 0) {
+            columnsDef.forEach(c => { state.visibleColumns[c.id] = c.defaultOn; });
+        }
 
         const saveState = () => {
-            try { localStorage.setItem('sf6_state', JSON.stringify({ mainChar: state.mainChar })); } catch {}
+            try {
+                localStorage.setItem('sf6_state', JSON.stringify({
+                    mainChar: state.mainChar,
+                    visibleColumns: state.visibleColumns,
+                    visibleTypes: state.visibleTypes
+                }));
+            } catch {}
         };
 
         // ── Format helpers ──
@@ -850,6 +859,7 @@
             document.getElementById('column-toggles').addEventListener('change', (e) => {
                 if (e.target.tagName === 'INPUT' && e.target.dataset.col) {
                     state.visibleColumns[e.target.dataset.col] = e.target.checked;
+                    saveState();
                     renderTable();
                 }
             });
@@ -884,6 +894,7 @@
                     state.visibleTypes.push(type);
                     chip.classList.replace('inactive', 'active');
                 }
+                saveState();
                 renderTable();
             });
         }
