@@ -235,7 +235,7 @@
             <input type="range" id="strikeSlider" min="1" max="10" value="2">
         </div>
         <div class="control-group" id="shimmyTimingGroup" style="display: none;">
-            <label>シミー（投げ間合い外に出る）: <span id="shimmyVal">7</span>F目</label>
+            <label>シミー（回避可能な遅らせグラップの限界）: <span id="shimmyVal">7</span>F目入力まで</label>
             <input type="range" id="shimmySlider" min="1" max="15" value="7">
         </div>
         <div class="control-group">
@@ -407,8 +407,8 @@
                 let isAbareLoseVsStrike = (atkAction === 'strike' && defAction === 'abare' && abareHitFrame > strikeHitFrame);
 
                 let isShimmyGuardsAbare = (atkAction === 'shimmy' && defAction === 'abare');
-                let isShimmyHitByThrow = (atkAction === 'shimmy' && isTechAction && throwInputFrame <= shimmyEvadeFrame);
-                let isShimmySuccess = (atkAction === 'shimmy' && isTechAction && throwInputFrame > shimmyEvadeFrame);
+                let isShimmySuccess = (atkAction === 'shimmy' && isTechAction && throwInputFrame <= shimmyEvadeFrame);
+                let isShimmyHitByThrow = (atkAction === 'shimmy' && isTechAction && throwInputFrame > shimmyEvadeFrame);
 
                 // --- 攻撃側 ---
                 if (atkAction === 'throw') {
@@ -687,12 +687,12 @@
                 if (atk === 'shimmy') {
                     let sEvade = parseInt(shimmySlider.value);
                     if (def === 'fast') {
-                        if (1 <= sEvade) return { class: 'res-def-win', text: '🎉 投げ被弾' };
-                        return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
+                        if (1 <= sEvade) return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
+                        return { class: 'res-def-win', text: '🎉 投げ被弾' };
                     }
                     if (def === 'delay') {
-                        if (dIn <= sEvade) return { class: 'res-def-win', text: '🎉 投げ被弾' };
-                        return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
+                        if (dIn <= sEvade) return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
+                        return { class: 'res-def-win', text: '🎉 投げ被弾' };
                     }
                     if (def === 'abare') return { class: 'res-guard', text: '🛡️ ガード' };
                     if (def === 'guard') return { class: 'res-evade', text: '👀 様子見' };
@@ -734,7 +734,7 @@
                         ${getCellHtml('strike','backdash')}
                     </tr>
                     <tr>
-                        <td>設定シミー (回避${shimmyEvadeFrame}F)</td>
+                        <td>設定シミー (限界${shimmyEvadeFrame}F)</td>
                         ${getCellHtml('shimmy','fast')}
                         ${getCellHtml('shimmy','delay')}
                         ${getCellHtml('shimmy','abare')}
