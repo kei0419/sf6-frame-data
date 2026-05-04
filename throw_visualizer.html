@@ -234,6 +234,10 @@
             <label>打撃の着弾（重なり）: <span id="strikeVal">2</span>F目 <small>(※1Fが最速)</small></label>
             <input type="range" id="strikeSlider" min="1" max="10" value="2">
         </div>
+        <div class="control-group" id="shimmyTimingGroup" style="display: none;">
+            <label>シミー（投げ間合い外に出る）: <span id="shimmyVal">7</span>F目</label>
+            <input type="range" id="shimmySlider" min="1" max="15" value="7">
+        </div>
         <div class="control-group">
             <label>防御側（起き上がり）</label>
             <select id="defAction">
@@ -397,7 +401,10 @@
                 let isAbareTradeVsStrike = (atkAction === 'strike' && defAction === 'abare' && abareHitFrame === strikeHitFrame);
                 let isAbareLoseVsThrow = (atkAction === 'throw' && defAction === 'abare' && abareHitFrame >= throwHitFrame);
                 let isAbareLoseVsStrike = (atkAction === 'strike' && defAction === 'abare' && abareHitFrame > strikeHitFrame);
-                let isAbareWhiff = (atkAction === 'shimmy' && defAction === 'abare');
+
+                let isShimmyGuardsAbare = (atkAction === 'shimmy' && defAction === 'abare');
+                let isShimmyHitByThrow = (atkAction === 'shimmy' && isTechAction && defThrowActiveFrame <= shimmyEvadeFrame);
+                let isShimmySuccess = (atkAction === 'shimmy' && isTechAction && defThrowActiveFrame > shimmyEvadeFrame);
 
                 // --- 攻撃側 ---
                 if (atkAction === 'throw') {
@@ -413,7 +420,19 @@
                         else if (i > strikeHitFrame + 2 && i <= strikeHitFrame + 15) { aClass = 'atk-whiff-rec'; aText = '隙'; }
                     }
                 } else if (atkAction === 'shimmy') {
-                    if (i <= 10) { aClass = 'atk-shimmy'; aText = '歩'; }
+                    if (isShimmyHitByThrow && i >= defThrowActiveFrame && i <= defThrowActiveFrame + 15) {
+                        aClass = 'atk-punish'; aText = '被'; // 投げを食らう
+                    } else if (isShimmyGuardsAbare && i >= abareHitFrame && i <= abareHitFrame + 15) {
+                        aClass = 'def-guard'; aText = 'ガ'; // 暴れをガード
+                    } else {
+                        if (isShimmySuccess && i >= throwInputFrame + 15 && i < throwInputFrame + 25) {
+                            aClass = 'atk-punish'; aText = 'パ'; // パニカン攻撃
+                        } else if (i < shimmyEvadeFrame) {
+                            aClass = 'atk-shimmy'; aText = '歩'; // 下がり中
+                        } else if (!isShimmyHitByThrow && !isShimmyGuardsAbare && i <= 15) {
+                            aClass = 'atk-shimmy'; aText = '歩';
+                        }
+                    }
                 }
                 
                 // 攻撃側の上書き（暴れ勝ち・相打ちの場合）
@@ -437,7 +456,17 @@
                         dClass = 'def-guard'; dText = 'G';
                     }
                 } else if (defAction === 'tech-delay' || defAction === 'tech-fast') {
-                    if (isHitByStrike && i >= strikeHitFrame && i <= strikeHitFrame + 15) {
+                    if (atkAction === 'shimmy' && isShimmyHitByThrow) {
+                        if (i < throwInputFrame) {
+                            dClass = 'def-guard'; dText = 'G';
+                        } else if (i === throwInputFrame) {
+                            dClass = 'def-tech-window'; dText = '入';
+                        } else if (i >= defThrowActiveFrame && i <= defThrowActiveFrame + 15) {
+                            dClass = 'atk-throw-active'; dText = '投'; // 投げ成功！
+                        } else if (i > throwInputFrame && i < defThrowActiveFrame) {
+                            dClass = 'def-whiff-start'; dText = '発';
+                        }
+                    } else if (isHitByStrike && i >= strikeHitFrame && i <= strikeHitFrame + 15) {
                         dClass = 'atk-punish'; dText = '被';
                     } else if (i < throwInputFrame) {
                         dClass = 'def-guard'; dText = 'G';
@@ -460,7 +489,7 @@
                         dClass = 'atk-punish'; dText = '被';
                     } else {
                         let endF = (atkAction === 'throw') ? throwHitFrame : (atkAction === 'strike' ? strikeHitFrame : 999);
-                        if (i < endF || isAbareWinVsThrow || isAbareWinVsStrike || isAbareWhiff) {
+                        if (i < endF || isAbareWinVsThrow || isAbareWinVsStrike || isShimmyGuardsAbare) {
                             if (i >= 1 && i < abareHitFrame) { dClass = 'atk-strike-start'; dText='発'; }
                             else if (i >= abareHitFrame && i <= abareHitFrame + 2) { dClass = 'atk-strike-active'; dText='打'; }
                             else if (i > abareHitFrame + 2 && i <= abareHitFrame + 15) { dClass = 'atk-whiff-rec'; dText='隙'; }
@@ -512,11 +541,22 @@
                         resultColor = "var(--color-punish)";
                     }
                 } else if (atkAction === 'shimmy') {
-                    resultMessage = "☠️ シミー成功！ 暴れを空振ってしまいパニカン確定！";
+                    resultMessage = "🛡️ シミー側は後ろ歩き中のため暴れをガード！";
+                    resultColor = "var(--color-guard)";
+                }
+            } else if (atkAction === 'shimmy') {
+                if (isShimmyGuardsAbare) {
+                    resultMessage = "🛡️ 相手の暴れを安全にガード！ (シミー側はガード状態)";
+                    resultColor = "var(--color-guard)";
+                } else if (isShimmyHitByThrow) {
+                    resultMessage = "💥 シミーが間に合わず、投げを食らった！";
+                    resultColor = "var(--color-punish)";
+                } else if (isShimmySuccess) {
+                    resultMessage = "☠️ シミー成功！ 投げを空振ってしまいパニカン確定！";
                     resultColor = "var(--color-whiff)";
-                    for(let i = abareHitFrame + 3; i < abareHitFrame + 15; i++) {
-                        if(i < MAX_FRAMES) atkCells[i] = `<div class="cell atk-punish">パ</div>`;
-                    }
+                } else if (defAction === 'guard' || defAction === 'backdash') {
+                    resultMessage = "👀 お互いに距離が離れた";
+                    resultColor = "var(--color-shimmy)";
                 }
             } else if (defAction === 'backdash') {
                 if (atkAction === 'throw') {
@@ -577,13 +617,7 @@
                     resultMessage = `🛡️ 打撃を安全にガード！ (${techStr}のガード部分が機能)`;
                     resultColor = "var(--color-guard)";
                 } else if (atkAction === 'shimmy' && isTechAction) {
-                    resultMessage = "☠️ シミー成功！ 投げを空振ってしまいパニカン確定！";
-                    resultColor = "var(--color-whiff)";
-                    
-                    // シミーのパニカン表現を上書き
-                    for(let i = throwInputFrame + 15; i < throwInputFrame + 25; i++) {
-                        if(i < MAX_FRAMES) atkCells[i] = `<div class="cell atk-punish">パ</div>`;
-                    }
+                    // Shimmy results are now fully handled in the dedicated atkAction === 'shimmy' block above.
                 } else if (atkAction === 'shimmy' && defAction === 'guard') {
                     resultMessage = "👀 何も起きずにお見合い状態";
                     resultColor = "var(--color-shimmy)";
@@ -645,9 +679,17 @@
                     if (def === 'backdash') return { class: 'res-atk-win', text: '💥 ヒット' };
                 }
                 if (atk === 'shimmy') {
-                    if (def === 'fast') return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
-                    if (def === 'delay') return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
-                    if (def === 'abare') return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
+                    let sEvade = parseInt(shimmySlider.value);
+                    if (def === 'fast') {
+                        if (5 <= sEvade) return { class: 'res-def-win', text: '🎉 投げ被弾' };
+                        return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
+                    }
+                    if (def === 'delay') {
+                        let dAct = dIn + 4;
+                        if (dAct <= sEvade) return { class: 'res-def-win', text: '🎉 投げ被弾' };
+                        return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
+                    }
+                    if (def === 'abare') return { class: 'res-guard', text: '🛡️ ガード' };
                     if (def === 'guard') return { class: 'res-evade', text: '👀 様子見' };
                     if (def === 'backdash') return { class: 'res-evade', text: '👀 様子見' };
                 }
@@ -687,7 +729,7 @@
                         ${getCellHtml('strike','backdash')}
                     </tr>
                     <tr>
-                        <td>シミー (後ろ歩き)</td>
+                        <td>設定シミー (回避${shimmyEvadeFrame}F)</td>
                         ${getCellHtml('shimmy','fast')}
                         ${getCellHtml('shimmy','delay')}
                         ${getCellHtml('shimmy','abare')}
@@ -715,6 +757,10 @@
         });
         abareSlider.addEventListener('input', (e) => {
             abareVal.innerText = e.target.value;
+            render();
+        });
+        shimmySlider.addEventListener('input', (e) => {
+            shimmyVal.innerText = e.target.value;
             render();
         });
 
