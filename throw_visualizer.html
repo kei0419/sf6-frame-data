@@ -407,8 +407,8 @@
                 let isAbareLoseVsStrike = (atkAction === 'strike' && defAction === 'abare' && abareHitFrame > strikeHitFrame);
 
                 let isShimmyGuardsAbare = (atkAction === 'shimmy' && defAction === 'abare');
-                let isShimmyHitByThrow = (atkAction === 'shimmy' && isTechAction && defThrowActiveFrame <= shimmyEvadeFrame);
-                let isShimmySuccess = (atkAction === 'shimmy' && isTechAction && defThrowActiveFrame > shimmyEvadeFrame);
+                let isShimmyHitByThrow = (atkAction === 'shimmy' && isTechAction && throwInputFrame <= shimmyEvadeFrame);
+                let isShimmySuccess = (atkAction === 'shimmy' && isTechAction && throwInputFrame > shimmyEvadeFrame);
 
                 // --- 攻撃側 ---
                 if (atkAction === 'throw') {
@@ -432,7 +432,7 @@
                         if (isShimmySuccess && i >= throwInputFrame + 15 && i < throwInputFrame + 25) {
                             aClass = 'atk-punish'; aText = 'パ'; // パニカン攻撃
                         } else if (!isShimmyHitByThrow && !isShimmyGuardsAbare) {
-                            if (i < shimmyEvadeFrame) {
+                            if (i < shimmyEvadeFrame + 4) {
                                 aClass = 'atk-shimmy'; aText = '歩'; // 下がり中
                             } else if (i <= 15) {
                                 aClass = 'def-whiff-rec'; aText = '外'; // 間合い外
@@ -687,12 +687,11 @@
                 if (atk === 'shimmy') {
                     let sEvade = parseInt(shimmySlider.value);
                     if (def === 'fast') {
-                        if (5 <= sEvade) return { class: 'res-def-win', text: '🎉 投げ被弾' };
+                        if (1 <= sEvade) return { class: 'res-def-win', text: '🎉 投げ被弾' };
                         return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
                     }
                     if (def === 'delay') {
-                        let dAct = dIn + 4;
-                        if (dAct <= sEvade) return { class: 'res-def-win', text: '🎉 投げ被弾' };
+                        if (dIn <= sEvade) return { class: 'res-def-win', text: '🎉 投げ被弾' };
                         return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
                     }
                     if (def === 'abare') return { class: 'res-guard', text: '🛡️ ガード' };
