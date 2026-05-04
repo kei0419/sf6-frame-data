@@ -431,10 +431,12 @@
                     } else {
                         if (isShimmySuccess && i >= throwInputFrame + 15 && i < throwInputFrame + 25) {
                             aClass = 'atk-punish'; aText = 'パ'; // パニカン攻撃
-                        } else if (i < shimmyEvadeFrame) {
-                            aClass = 'atk-shimmy'; aText = '歩'; // 下がり中
-                        } else if (!isShimmyHitByThrow && !isShimmyGuardsAbare && i <= 15) {
-                            aClass = 'atk-shimmy'; aText = '歩';
+                        } else if (!isShimmyHitByThrow && !isShimmyGuardsAbare) {
+                            if (i < shimmyEvadeFrame) {
+                                aClass = 'atk-shimmy'; aText = '歩'; // 下がり中
+                            } else if (i <= 15) {
+                                aClass = 'def-whiff-rec'; aText = '外'; // 間合い外
+                            }
                         }
                     }
                 }
