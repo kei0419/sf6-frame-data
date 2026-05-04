@@ -354,6 +354,8 @@
         const strikeVal = document.getElementById('strikeVal');
         const abareSlider = document.getElementById('abareSlider');
         const abareVal = document.getElementById('abareVal');
+        const shimmySlider = document.getElementById('shimmySlider');
+        const shimmyVal = document.getElementById('shimmyVal');
         const resultText = document.getElementById('resultText');
 
         function render() {
@@ -365,10 +367,12 @@
             let strikeHitFrame = parseInt(strikeSlider.value);
             let throwHitFrame = parseInt(throwSlider.value);
             let abareHitFrame = parseInt(abareSlider.value);
+            let shimmyEvadeFrame = parseInt(shimmySlider.value);
             
             // UI制御
             document.getElementById('throwTimingGroup').style.display = (atkAction === 'throw') ? 'flex' : 'none';
             document.getElementById('strikeTimingGroup').style.display = (atkAction === 'strike') ? 'flex' : 'none';
+            document.getElementById('shimmyTimingGroup').style.display = (atkAction === 'shimmy') ? 'flex' : 'none';
             document.getElementById('defTimingGroup').style.display = (defAction === 'tech-delay') ? 'flex' : 'none';
             document.getElementById('abareTimingGroup').style.display = (defAction === 'abare') ? 'flex' : 'none';
             
