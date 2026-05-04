@@ -237,7 +237,8 @@
         <div class="control-group">
             <label>防御側（起き上がり）</label>
             <select id="defAction">
-                <option value="tech">グラップ（投げ抜け）</option>
+                <option value="tech-delay">グラップ（タイミング指定）</option>
+                <option value="tech-fast">最速投げ抜け</option>
                 <option value="abare">暴れ（打撃）</option>
                 <option value="backdash">バクステ（1-15F投げ無敵）</option>
                 <option value="guard">ガード継続</option>
@@ -326,11 +327,9 @@
             document.getElementById('atkAction').value = atk;
             
             if (def === 'fast') {
-                document.getElementById('defAction').value = 'tech';
-                document.getElementById('delaySlider').value = 1;
-                document.getElementById('delayVal').innerText = 1;
+                document.getElementById('defAction').value = 'tech-fast';
             } else if (def === 'delay') {
-                document.getElementById('defAction').value = 'tech';
+                document.getElementById('defAction').value = 'tech-delay';
             } else {
                 document.getElementById('defAction').value = def;
             }
@@ -366,9 +365,10 @@
             // UI制御
             document.getElementById('throwTimingGroup').style.display = (atkAction === 'throw') ? 'flex' : 'none';
             document.getElementById('strikeTimingGroup').style.display = (atkAction === 'strike') ? 'flex' : 'none';
-            document.getElementById('defTimingGroup').style.display = (defAction === 'tech') ? 'flex' : 'none';
+            document.getElementById('defTimingGroup').style.display = (defAction === 'tech-delay') ? 'flex' : 'none';
             document.getElementById('abareTimingGroup').style.display = (defAction === 'abare') ? 'flex' : 'none';
             
+            if (defAction === 'tech-fast') throwInputFrame = 1;
             if (defAction === 'guard') throwInputFrame = 999;
             
             // ヘッダー行
@@ -386,10 +386,11 @@
                 let aClass = ''; let aText = '';
                 let dClass = ''; let dText = '';
 
-                let defThrowActiveFrame = (defAction === 'tech') ? throwInputFrame + 4 : 999;
-                let isTechSuccess = (atkAction === 'throw' && defAction === 'tech' && throwInputFrame <= throwHitFrame + 8 && defThrowActiveFrame >= throwHitFrame);
-                let isDefThrowWin = (atkAction === 'strike' && defAction === 'tech' && defThrowActiveFrame < strikeHitFrame);
-                let isHitByStrike = (atkAction === 'strike' && defAction === 'tech' && !isDefThrowWin && throwInputFrame <= strikeHitFrame);
+                let isTechAction = (defAction === 'tech-delay' || defAction === 'tech-fast');
+                let defThrowActiveFrame = isTechAction ? throwInputFrame + 4 : 999;
+                let isTechSuccess = (atkAction === 'throw' && isTechAction && throwInputFrame <= throwHitFrame + 8 && defThrowActiveFrame >= throwHitFrame);
+                let isDefThrowWin = (atkAction === 'strike' && isTechAction && defThrowActiveFrame < strikeHitFrame);
+                let isHitByStrike = (atkAction === 'strike' && isTechAction && !isDefThrowWin && throwInputFrame <= strikeHitFrame);
                 
                 let isAbareWinVsThrow = (atkAction === 'throw' && defAction === 'abare' && abareHitFrame < throwHitFrame);
                 let isAbareWinVsStrike = (atkAction === 'strike' && defAction === 'abare' && abareHitFrame < strikeHitFrame);
@@ -435,7 +436,7 @@
                     } else {
                         dClass = 'def-guard'; dText = 'G';
                     }
-                } else if (defAction === 'tech') {
+                } else if (defAction === 'tech-delay' || defAction === 'tech-fast') {
                     if (isHitByStrike && i >= strikeHitFrame && i <= strikeHitFrame + 15) {
                         dClass = 'atk-punish'; dText = '被';
                     } else if (i < throwInputFrame) {
@@ -546,10 +547,11 @@
                     resultColor = "var(--color-shimmy)";
                 }
             } else {
-                let defThrowActiveFrame = (defAction === 'tech') ? throwInputFrame + 4 : 999;
-                let isTechSuccess = (atkAction === 'throw' && defAction === 'tech' && throwInputFrame <= throwHitFrame + 8 && defThrowActiveFrame >= throwHitFrame);
-                let isDefThrowWin = (atkAction === 'strike' && defAction === 'tech' && defThrowActiveFrame < strikeHitFrame);
-                let isHitByStrike = (atkAction === 'strike' && defAction === 'tech' && !isDefThrowWin && throwInputFrame <= strikeHitFrame);
+                let isTechAction = (defAction === 'tech-delay' || defAction === 'tech-fast');
+                let defThrowActiveFrame = isTechAction ? throwInputFrame + 4 : 999;
+                let isTechSuccess = (atkAction === 'throw' && isTechAction && throwInputFrame <= throwHitFrame + 8 && defThrowActiveFrame >= throwHitFrame);
+                let isDefThrowWin = (atkAction === 'strike' && isTechAction && defThrowActiveFrame < strikeHitFrame);
+                let isHitByStrike = (atkAction === 'strike' && isTechAction && !isDefThrowWin && throwInputFrame <= strikeHitFrame);
 
                 if (isTechSuccess) {
                     resultMessage = "✨ 投げ抜け成功！ (安全に距離が離れる)";
@@ -570,11 +572,11 @@
                 } else if (atkAction === 'strike' && defAction === 'guard') {
                     resultMessage = "🛡️ 打撃を安全にガード！";
                     resultColor = "var(--color-guard)";
-                } else if (atkAction === 'strike' && defAction === 'tech') {
+                } else if (atkAction === 'strike' && isTechAction) {
                     let techStr = throwInputFrame === 1 ? "最速抜け" : "遅らせグラップ";
                     resultMessage = `🛡️ 打撃を安全にガード！ (${techStr}のガード部分が機能)`;
                     resultColor = "var(--color-guard)";
-                } else if (atkAction === 'shimmy' && defAction === 'tech') {
+                } else if (atkAction === 'shimmy' && isTechAction) {
                     resultMessage = "☠️ シミー成功！ 投げを空振ってしまいパニカン確定！";
                     resultColor = "var(--color-whiff)";
                     
