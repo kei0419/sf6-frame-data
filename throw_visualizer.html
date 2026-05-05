@@ -776,14 +776,11 @@
         });
 
         // 初期描画
-        // pageshowイベント発火「後」にもブラウザがフォーム値を復元することがあるため、
-        // setTimeout(0) で次のタスクキューまで遅らせてから確実にリセット＆renderする
-        window.addEventListener('pageshow', function() {
-            setTimeout(function() {
-                atkActionSel.value = 'throw';
-                defActionSel.value = 'tech-delay';
-                render();
-            }, 0);
+        // ブラウザのフォーム状態復元はload後に非同期で行われる（Chrome: ~数十ms）
+        // 100ms の猶予を持たせることで復元完了後に render() を呼び、
+        // select値とUIの表示を必ず一致させる
+        window.addEventListener('load', function() {
+            setTimeout(render, 100);
         });
     </script>
 </body>
