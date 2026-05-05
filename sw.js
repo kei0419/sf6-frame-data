@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sf6-frame-v17';
+const CACHE_NAME = 'sf6-frame-v18';
 const ASSETS = [
   './',
   './index.html',
