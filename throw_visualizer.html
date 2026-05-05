@@ -752,8 +752,14 @@
             document.querySelector('.matrix-table').innerHTML = matHtml;
         }
 
-        atkActionSel.addEventListener('change', render);
-        defActionSel.addEventListener('change', render);
+        // 状態変更時にsessionStorageへ保存（リロード時の復元に使用）
+        function saveState() {
+            sessionStorage.setItem('atkAction', atkActionSel.value);
+            sessionStorage.setItem('defAction', defActionSel.value);
+        }
+
+        atkActionSel.addEventListener('change', () => { saveState(); render(); });
+        defActionSel.addEventListener('change', () => { saveState(); render(); });
         delaySlider.addEventListener('input', (e) => {
             delayVal.innerText = e.target.value;
             render();
@@ -776,12 +782,13 @@
         });
 
         // 初期描画
-        // ブラウザのフォーム状態復元はload後に非同期で行われる（Chrome: ~数十ms）
-        // 100ms の猶予を持たせることで復元完了後に render() を呼び、
-        // select値とUIの表示を必ず一致させる
-        window.addEventListener('load', function() {
-            setTimeout(render, 100);
-        });
+        // sessionStorageから値を復元してからrender()を呼ぶことで、
+        // ブラウザのセッション履歴によるフォーム復元タイミングに依存しない
+        const savedAtk = sessionStorage.getItem('atkAction');
+        const savedDef = sessionStorage.getItem('defAction');
+        if (savedAtk) atkActionSel.value = savedAtk;
+        if (savedDef) defActionSel.value = savedDef;
+        render();
     </script>
 </body>
 </html>
