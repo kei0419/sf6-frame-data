@@ -220,7 +220,7 @@
     <div class="controls">
         <div class="control-group">
             <label>攻撃側（起き攻め）</label>
-            <select id="atkAction">
+            <select id="atkAction" autocomplete="off">
                 <option value="throw">投げ</option>
                 <option value="strike">打撃</option>
                 <option value="shimmy">シミー（後ろ歩き）</option>
@@ -240,7 +240,7 @@
         </div>
         <div class="control-group">
             <label>防御側（起き上がり）</label>
-            <select id="defAction">
+            <select id="defAction" autocomplete="off">
                 <option value="tech-delay">グラップ（タイミング指定）</option>
                 <option value="tech-fast">最速投げ抜け</option>
                 <option value="abare">暴れ（打撃）</option>
@@ -775,11 +775,8 @@
             render();
         });
 
-        // 初期描画
-        // pageshowイベント + setTimeout(0) でブラウザのフォーム値キャッシュ復元を確実に待つ
-        // （通常リロード時にブラウザがselectの選択状態を非同期復元するため、
-        //   loadイベントだけでは競合してしまう場合がある）
-        window.addEventListener('pageshow', () => setTimeout(render, 0));
+        // 初期描画（autocomplete="off"によりブラウザのフォームキャッシュ競合が発生しないため直呼びでOK）
+        render();
     </script>
 </body>
 </html>
