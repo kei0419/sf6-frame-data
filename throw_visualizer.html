@@ -776,11 +776,13 @@
         });
 
         // 初期描画
-        // ブラウザのフォーム状態復元（autocomplete="off"でも防げない場合がある）に
-        // 依存しないよう、JS側で明示的にデフォルト値を設定してからrenderする
-        atkActionSel.value = 'throw';
-        defActionSel.value = 'tech-delay';
-        render();
+        // ブラウザのフォーム状態復元（セッションリストア）はインラインスクリプト実行「後」に
+        // 非同期で行われるため、pageshowイベント（復元完了後に発火）でリセット＆renderする
+        window.addEventListener('pageshow', function() {
+            atkActionSel.value = 'throw';
+            defActionSel.value = 'tech-delay';
+            render();
+        });
     </script>
 </body>
 </html>
