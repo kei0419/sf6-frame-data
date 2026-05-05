@@ -775,7 +775,11 @@
             render();
         });
 
-        // 初期描画（autocomplete="off"によりブラウザのフォームキャッシュ競合が発生しないため直呼びでOK）
+        // 初期描画
+        // ブラウザのフォーム状態復元（autocomplete="off"でも防げない場合がある）に
+        // 依存しないよう、JS側で明示的にデフォルト値を設定してからrenderする
+        atkActionSel.value = 'throw';
+        defActionSel.value = 'tech-delay';
         render();
     </script>
 </body>
