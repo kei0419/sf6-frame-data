@@ -775,8 +775,11 @@
             render();
         });
 
-        // 初期描画（window.onloadでブラウザのフォーム値キャッシュ復元後に実行する）
-        window.addEventListener('load', render);
+        // 初期描画
+        // pageshowイベント + setTimeout(0) でブラウザのフォーム値キャッシュ復元を確実に待つ
+        // （通常リロード時にブラウザがselectの選択状態を非同期復元するため、
+        //   loadイベントだけでは競合してしまう場合がある）
+        window.addEventListener('pageshow', () => setTimeout(render, 0));
     </script>
 </body>
 </html>
