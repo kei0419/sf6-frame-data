@@ -775,8 +775,8 @@
             render();
         });
 
-        // 初期描画
-        render();
+        // 初期描画（window.onloadでブラウザのフォーム値キャッシュ復元後に実行する）
+        window.addEventListener('load', render);
     </script>
 </body>
 </html>
