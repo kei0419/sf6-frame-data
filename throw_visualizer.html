@@ -235,8 +235,8 @@
             <input type="range" id="strikeSlider" min="1" max="10" value="2">
         </div>
         <div class="control-group" id="shimmyTimingGroup" style="display: none;">
-            <label>シミー（回避に必要なF数）: <span id="shimmyVal">3</span>F <small>(※1Fが全避けの最強シミー)</small></label>
-            <input type="range" id="shimmySlider" min="1" max="15" value="3">
+            <label>シミー: <span id="shimmyVal">2</span>F</label>
+            <input type="range" id="shimmySlider" min="0" max="14" value="2">
         </div>
         <div class="control-group">
             <label>防御側（起き上がり）</label>
@@ -282,7 +282,7 @@
             <thead>
                 <tr>
                     <th>攻撃側 \ 防御側</th>
-                    <th>最速投げ抜け (1F入力)</th>
+                    <th>最速投げ抜け</th>
                     <th>遅らせグラップ (6F入力)</th>
                     <th>4F暴れ (小技)</th>
                     <th>ガード継続</th>
@@ -367,7 +367,7 @@
             let strikeHitFrame = parseInt(strikeSlider.value);
             let throwHitFrame = parseInt(throwSlider.value);
             let abareHitFrame = parseInt(abareSlider.value);
-            let shimmyEvadeFrame = parseInt(shimmySlider.value);
+            let shimmyEvadeFrame = parseInt(shimmySlider.value) + 1;
             
             // UI制御
             document.getElementById('throwTimingGroup').style.display = (atkAction === 'throw') ? 'flex' : 'none';
@@ -691,7 +691,7 @@
                     if (def === 'backdash') return { class: 'res-atk-win', text: '💥 ヒット' };
                 }
                 if (atk === 'shimmy') {
-                    let sEvade = parseInt(shimmySlider.value);
+                    let sEvade = parseInt(shimmySlider.value) + 1;
                     if (def === 'fast') {
                         if (1 >= sEvade) return { class: 'res-atk-win', text: '☠️ パニカン(スカ)' };
                         return { class: 'res-def-win', text: '🎉 投げ被弾' };
@@ -715,7 +715,7 @@
                 <thead>
                     <tr>
                         <th>攻撃側 \\ 防御側</th>
-                        <th>最速投げ抜け (1F入力)</th>
+                        <th>最速投げ抜け</th>
                         <th style="color:var(--color-tech-window)">設定グラップ (${parseInt(delaySlider.value)}F遅らせ)</th>
                         <th>設定暴れ (${abareSlider.value}F)</th>
                         <th>ガード継続</th>
@@ -740,7 +740,7 @@
                         ${getCellHtml('strike','backdash')}
                     </tr>
                     <tr>
-                        <td>設定シミー (性能${shimmyEvadeFrame}F)</td>
+                        <td>設定シミー (${parseInt(shimmySlider.value)}F)</td>
                         ${getCellHtml('shimmy','fast')}
                         ${getCellHtml('shimmy','delay')}
                         ${getCellHtml('shimmy','abare')}
