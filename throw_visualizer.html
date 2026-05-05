@@ -481,8 +481,8 @@
                         if (isTechSuccess) { dText = '抜'; aClass = 'def-tech-window'; aText = '抜'; }
                     } else if (i > throwInputFrame && i < throwInputFrame + 30 && !isHitByStrike && !isDefThrowWin) {
                         if (!isTechSuccess) {
-                            if (i < throwInputFrame + 5) { dClass = 'def-whiff-start'; dText='発'; }
-                            else if (i < throwInputFrame + 8) { dClass = 'def-whiff-active'; dText='投'; }
+                            if (i < throwInputFrame + 4) { dClass = 'def-whiff-start'; dText='発'; }
+                            else if (i < throwInputFrame + 7) { dClass = 'def-whiff-active'; dText='投'; }
                             else { dClass = 'def-whiff-rec'; dText='隙'; }
                         }
                     }
