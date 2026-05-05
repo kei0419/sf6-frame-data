@@ -573,17 +573,17 @@
                     let frameAdv = backdashTotalF - throwTotalF;
                     let advStr = frameAdv >= 0 ? `+${frameAdv}F` : `${frameAdv}F`;
                     if (throwHitFrame <= 15) {
-                        resultMessage = `💨 バクステの投げ無敵で回避！ パニカン確定！ | 投げ全体${throwTotalF}F、バクステ全体${backdashTotalF}F → ${advStr} (防御側有利)`;
+                        resultMessage = `💨 バクステの投げ無敵で回避！ ${advStr}`;
                         resultColor = "var(--color-tech-window)";
                         // バクステ回避後の攻撃側の硬直をパニカン色に
                         for(let i = 16; i < throwHitFrame + 25; i++) {
                             if(i < MAX_FRAMES) atkCells[i] = `<div class="cell atk-punish">パ</div>`;
                         }
                     } else if (throwHitFrame <= 23) {
-                        resultMessage = `💥 バクステ硬直に投げが刺さった！ (パニカン) | 投げ全体${throwTotalF}F → ${advStr}`;
+                        resultMessage = `💥 バクステ硬直に投げが刺さった！ ${advStr}`;
                         resultColor = "var(--color-punish)";
                     } else {
-                        resultMessage = `👀 お見合い。投げ全体${throwTotalF}F、バクステ全体${backdashTotalF}F → ${advStr}`;
+                        resultMessage = `👀 お見合い ${advStr}`;
                         resultColor = "var(--color-shimmy)";
                     }
                 } else if (atkAction === 'strike') {
