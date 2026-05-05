@@ -776,12 +776,14 @@
         });
 
         // 初期描画
-        // ブラウザのフォーム状態復元（セッションリストア）はインラインスクリプト実行「後」に
-        // 非同期で行われるため、pageshowイベント（復元完了後に発火）でリセット＆renderする
+        // pageshowイベント発火「後」にもブラウザがフォーム値を復元することがあるため、
+        // setTimeout(0) で次のタスクキューまで遅らせてから確実にリセット＆renderする
         window.addEventListener('pageshow', function() {
-            atkActionSel.value = 'throw';
-            defActionSel.value = 'tech-delay';
-            render();
+            setTimeout(function() {
+                atkActionSel.value = 'throw';
+                defActionSel.value = 'tech-delay';
+                render();
+            }, 0);
         });
     </script>
 </body>
