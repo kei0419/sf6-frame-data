@@ -390,25 +390,25 @@
             let resultMessage = "";
             let resultColor = "";
 
+            let isTechAction = (defAction === 'tech-delay' || defAction === 'tech-fast');
+            let defThrowActiveFrame = isTechAction ? throwInputFrame + 4 : 999;
+            let isTechSuccess = (atkAction === 'throw' && isTechAction && throwInputFrame <= throwHitFrame + 8 && defThrowActiveFrame >= throwHitFrame);
+            let isDefThrowWin = (atkAction === 'strike' && isTechAction && defThrowActiveFrame < strikeHitFrame);
+            let isHitByStrike = (atkAction === 'strike' && isTechAction && !isDefThrowWin && throwInputFrame <= strikeHitFrame);
+            
+            let isAbareWinVsThrow = (atkAction === 'throw' && defAction === 'abare' && abareHitFrame < throwHitFrame);
+            let isAbareWinVsStrike = (atkAction === 'strike' && defAction === 'abare' && abareHitFrame < strikeHitFrame);
+            let isAbareTradeVsStrike = (atkAction === 'strike' && defAction === 'abare' && abareHitFrame === strikeHitFrame);
+            let isAbareLoseVsThrow = (atkAction === 'throw' && defAction === 'abare' && abareHitFrame >= throwHitFrame);
+            let isAbareLoseVsStrike = (atkAction === 'strike' && defAction === 'abare' && abareHitFrame > strikeHitFrame);
+
+            let isShimmyGuardsAbare = (atkAction === 'shimmy' && defAction === 'abare');
+            let isShimmySuccess = (atkAction === 'shimmy' && isTechAction && throwInputFrame >= shimmyEvadeFrame);
+            let isShimmyHitByThrow = (atkAction === 'shimmy' && isTechAction && throwInputFrame < shimmyEvadeFrame);
+
             for (let i = 1; i <= MAX_FRAMES; i++) {
                 let aClass = ''; let aText = '';
                 let dClass = ''; let dText = '';
-
-                let isTechAction = (defAction === 'tech-delay' || defAction === 'tech-fast');
-                let defThrowActiveFrame = isTechAction ? throwInputFrame + 4 : 999;
-                let isTechSuccess = (atkAction === 'throw' && isTechAction && throwInputFrame <= throwHitFrame + 8 && defThrowActiveFrame >= throwHitFrame);
-                let isDefThrowWin = (atkAction === 'strike' && isTechAction && defThrowActiveFrame < strikeHitFrame);
-                let isHitByStrike = (atkAction === 'strike' && isTechAction && !isDefThrowWin && throwInputFrame <= strikeHitFrame);
-                
-                let isAbareWinVsThrow = (atkAction === 'throw' && defAction === 'abare' && abareHitFrame < throwHitFrame);
-                let isAbareWinVsStrike = (atkAction === 'strike' && defAction === 'abare' && abareHitFrame < strikeHitFrame);
-                let isAbareTradeVsStrike = (atkAction === 'strike' && defAction === 'abare' && abareHitFrame === strikeHitFrame);
-                let isAbareLoseVsThrow = (atkAction === 'throw' && defAction === 'abare' && abareHitFrame >= throwHitFrame);
-                let isAbareLoseVsStrike = (atkAction === 'strike' && defAction === 'abare' && abareHitFrame > strikeHitFrame);
-
-                let isShimmyGuardsAbare = (atkAction === 'shimmy' && defAction === 'abare');
-                let isShimmySuccess = (atkAction === 'shimmy' && isTechAction && throwInputFrame >= shimmyEvadeFrame);
-                let isShimmyHitByThrow = (atkAction === 'shimmy' && isTechAction && throwInputFrame < shimmyEvadeFrame);
 
                 // --- 攻撃側 ---
                 if (atkAction === 'throw') {
