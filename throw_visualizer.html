@@ -253,8 +253,8 @@
             <input type="range" id="abareSlider" min="4" max="15" value="4">
         </div>
         <div class="control-group" id="defTimingGroup">
-            <label>投げ入力タイミング: <span id="delayVal">6</span>F目 <small>(※1Fなら最速)</small></label>
-            <input type="range" id="delaySlider" min="1" max="15" value="6">
+            <label>投げ遅らせ: <span id="delayVal">5</span>F遅らせ <small>(※0Fが最速)</small></label>
+            <input type="range" id="delaySlider" min="0" max="14" value="5">
         </div>
     </div>
 
@@ -363,7 +363,7 @@
             
             const atkAction = atkActionSel.value;
             const defAction = defActionSel.value;
-            let throwInputFrame = parseInt(delaySlider.value);
+            let throwInputFrame = parseInt(delaySlider.value) + 1; // 0ベース表示を内部1ベースに変換
             let strikeHitFrame = parseInt(strikeSlider.value);
             let throwHitFrame = parseInt(throwSlider.value);
             let abareHitFrame = parseInt(abareSlider.value);
@@ -648,7 +648,7 @@
             const evaluate = (atk, def) => {
                 let sHit = strikeHitFrame; 
                 let tHit = throwHitFrame;
-                let dIn = parseInt(delaySlider.value); 
+                let dIn = parseInt(delaySlider.value) + 1; // 0ベース表示を内部1ベースに変換
                 
                 if (atk === 'throw') {
                     if (def === 'fast') {
@@ -716,7 +716,7 @@
                     <tr>
                         <th>攻撃側 \\ 防御側</th>
                         <th>最速投げ抜け (1F入力)</th>
-                        <th style="color:var(--color-tech-window)">設定グラップ (${parseInt(delaySlider.value)}F入力)</th>
+                        <th style="color:var(--color-tech-window)">設定グラップ (${parseInt(delaySlider.value)}F遅らせ)</th>
                         <th>設定暴れ (${abareSlider.value}F)</th>
                         <th>ガード継続</th>
                         <th>バクステ (1-15F無敵)</th>
