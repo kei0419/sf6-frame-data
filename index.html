@@ -23,20 +23,25 @@
         }
 
         :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111827;
-            --bg-card: rgba(17, 24, 39, 0.7);
-            --bg-glass: rgba(30, 41, 59, 0.5);
-            --border: rgba(99, 102, 241, 0.15);
-            --border-active: rgba(99, 102, 241, 0.6);
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
+            /* デジタル庁 Blue Default に基づくダークカラーテーマ */
+            --bg-primary: #050b18;          /* 深みのあるダークブルーグレー */
+            --bg-secondary: #0c152b;        /* カードなどの一段明るい背景 */
+            --bg-card: rgba(12, 21, 43, 0.85);
+            --bg-glass: rgba(52, 96, 251, 0.08); /* Primary Baseを透過した背景 */
+            --border: rgba(112, 150, 248, 0.15); /* Primary Light の透過境界線 */
+            --border-active: rgba(52, 96, 251, 0.5); /* Primary Base */
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
             --text-muted: #64748b;
-            --accent: #6366f1;
-            --accent-glow: rgba(99, 102, 241, 0.3);
-            --positive: #22c55e;
-            --negative: #ef4444;
-            --neutral: #eab308;
+            
+            --accent: #3460FB;             /* Primary Base */
+            --accent-glow: rgba(52, 96, 251, 0.25);
+            
+            /* アラート・優劣（彩度を抑えめにして目に優しく） */
+            --positive: #34d399;           /* 明るいエメラルドグリーン（青背景と同化しない有利F） */
+            --negative: #FE3939;           /* Alert / Warning (マイナス確反Fは赤) */
+            --neutral: #eab308;            /* 黄色 */
             --safe-top: env(safe-area-inset-top);
             --safe-bottom: env(safe-area-inset-bottom);
             --safe-left: env(safe-area-inset-left);
@@ -58,9 +63,9 @@
 
         /* ── Header ── */
         .header {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(30, 41, 59, 0.9));
+            background: linear-gradient(135deg, rgba(52, 96, 251, 0.08), rgba(12, 21, 43, 0.95));
             border-bottom: 1px solid var(--border);
-            padding: 12px 16px;
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -74,13 +79,13 @@
         .header-left {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
         }
 
         .header-left h1 {
             font-size: 18px;
             font-weight: 800;
-            background: linear-gradient(135deg, #818cf8, #c084fc);
+            background: linear-gradient(135deg, #7096F8, #c084fc);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -98,12 +103,12 @@
 
         .header-right {
             display: flex;
-            gap: 6px;
+            gap: 8px;
         }
 
         /* ── Buttons ── */
         .btn {
-            padding: 8px 14px;
+            padding: 6px 14px;
             border-radius: 8px;
             border: 1px solid var(--border);
             background: var(--bg-glass);
@@ -120,16 +125,32 @@
             justify-content: center;
         }
 
+        .btn:hover {
+            background: rgba(52, 96, 251, 0.15);
+            color: var(--text-primary);
+            border-color: var(--border-active);
+        }
+
         .btn:active {
-            background: rgba(99, 102, 241, 0.2);
             transform: scale(0.96);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: #254EDB;
+            border-color: #254EDB;
         }
 
         /* ── Container ── */
         .container {
             max-width: 1800px;
             margin: 0 auto;
-            padding: 12px;
+            padding: 16px;
         }
 
         /* ── Controls Panel ── */
@@ -137,8 +158,8 @@
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
         }
@@ -146,21 +167,20 @@
         .controls-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            align-items: end;
-            margin-bottom: 12px;
+            gap: 16px;
+            align-items: flex-end;
         }
 
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
             flex: 1;
             min-width: 120px;
         }
 
         .control-group label {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
@@ -169,12 +189,12 @@
 
         .select-input,
         .search-input {
-            padding: 10px 12px;
-            background: rgba(15, 23, 42, 0.8);
+            padding: 8px 12px;
+            background: rgba(5, 11, 24, 0.8);
             border: 1px solid var(--border);
             border-radius: 8px;
             color: var(--text-primary);
-            font-size: 14px;
+            font-size: 13px;
             font-family: inherit;
             width: 100%;
             min-height: 44px;
@@ -193,21 +213,33 @@
             color: var(--text-muted);
         }
 
-        /* ── Collapsible Toggles ── */
-        .toggles-section {
-            margin-top: 10px;
-        }
-
-        .toggles-header {
+        /* ── Advanced Controls (Accordion) ── */
+        .advanced-controls {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.2s;
+            opacity: 0;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            padding: 6px 0;
-            -webkit-tap-highlight-color: transparent;
+            flex-direction: column;
+            gap: 16px;
         }
 
-        .toggles-header h4 {
+        .advanced-controls.show {
+            max-height: 1000px;
+            opacity: 1;
+            margin-top: 16px;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+        }
+
+        /* ── Toggles ── */
+        .toggles-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toggles-section h4 {
             font-size: 11px;
             font-weight: 700;
             color: var(--text-muted);
@@ -215,41 +247,21 @@
             letter-spacing: 0.5px;
         }
 
-        .toggles-header .chevron {
-            color: var(--text-muted);
-            font-size: 12px;
-            transition: transform 0.2s;
-        }
-
-        .toggles-header.collapsed .chevron {
-            transform: rotate(-90deg);
-        }
-
-        .toggles-content {
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .toggles-content.collapsed {
-            max-height: 0 !important;
-        }
-
         .column-toggles-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            padding-top: 6px;
+            gap: 10px;
         }
 
         .toggle-group {
-            background: rgba(15, 23, 42, 0.4);
-            border: 1px solid rgba(99, 102, 241, 0.08);
+            background: rgba(5, 11, 24, 0.4);
+            border: 1px solid rgba(52, 96, 251, 0.08);
             border-radius: 8px;
-            padding: 8px 10px;
+            padding: 8px 12px;
         }
 
         .toggle-group-title {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
             color: var(--accent);
             margin-bottom: 4px;
@@ -259,14 +271,14 @@
         .toggle-group .checkbox-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 2px 10px;
+            gap: 4px 10px;
         }
 
         .checkbox-label {
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 12px;
+            gap: 6px;
+            font-size: 11px;
             color: var(--text-secondary);
             cursor: pointer;
             white-space: nowrap;
@@ -276,8 +288,8 @@
 
         .checkbox-label input[type="checkbox"] {
             accent-color: var(--accent);
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
         }
 
         /* ── Type Filter Chips ── */
@@ -285,13 +297,12 @@
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            margin-top: 6px;
         }
 
         .type-chip {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
@@ -303,18 +314,55 @@
             align-items: center;
         }
 
-        .type-chip.active { opacity: 1; }
-        .type-chip.inactive { opacity: 0.35; filter: grayscale(0.5); }
+        .type-chip.active {
+            opacity: 1;
+        }
 
-        .type-chip[data-type="通常技"] { background: rgba(99, 102, 241, 0.15); color: #818cf8; border-color: rgba(99, 102, 241, 0.3); }
-        .type-chip[data-type="特殊技"] { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border-color: rgba(6, 182, 212, 0.3); }
-        .type-chip[data-type="必殺技"] { background: rgba(249, 115, 22, 0.15); color: #fb923c; border-color: rgba(249, 115, 22, 0.3); }
-        .type-chip[data-type="スーパーアーツ"] { background: rgba(236, 72, 153, 0.15); color: #f472b6; border-color: rgba(236, 72, 153, 0.3); }
-        .type-chip[data-type="通常投げ"] { background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3); }
-        .type-chip[data-type="共通システム"] { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border-color: rgba(100, 116, 139, 0.3); }
+        .type-chip.inactive {
+            opacity: 0.35;
+            filter: grayscale(0.5);
+        }
+
+        .type-chip[data-type="通常技"] {
+            background: rgba(52, 96, 251, 0.12);
+            color: #7096F8;
+            border-color: rgba(52, 96, 251, 0.25);
+        }
+
+        .type-chip[data-type="特殊技"] {
+            background: rgba(6, 182, 212, 0.12);
+            color: #22d3ee;
+            border-color: rgba(6, 182, 212, 0.25);
+        }
+
+        .type-chip[data-type="必殺技"] {
+            background: rgba(249, 115, 22, 0.12);
+            color: #fb923c;
+            border-color: rgba(249, 115, 22, 0.25);
+        }
+
+        .type-chip[data-type="スーパーアーツ"] {
+            background: rgba(236, 72, 153, 0.12);
+            color: #f472b6;
+            border-color: rgba(236, 72, 153, 0.25);
+        }
+
+        .type-chip[data-type="通常投げ"] {
+            background: rgba(168, 85, 247, 0.12);
+            color: #c084fc;
+            border-color: rgba(168, 85, 247, 0.25);
+        }
+
+        .type-chip[data-type="共通システム"] {
+            background: rgba(100, 116, 139, 0.12);
+            color: #94a3b8;
+            border-color: rgba(100, 116, 139, 0.25);
+        }
 
         /* ── Added Chars Tags ── */
-        .added-chars { margin-top: 8px; }
+        .added-chars {
+            margin-top: 10px;
+        }
 
         .tags-list {
             display: flex;
@@ -326,11 +374,11 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 4px 12px;
-            background: rgba(99, 102, 241, 0.12);
-            border: 1px solid rgba(99, 102, 241, 0.25);
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 3px 10px;
+            background: rgba(52, 96, 251, 0.1);
+            border: 1px solid rgba(52, 96, 251, 0.2);
+            border-radius: 16px;
+            font-size: 11px;
             font-weight: 600;
             color: #a5b4fc;
         }
@@ -338,7 +386,7 @@
         .tag-close {
             cursor: pointer;
             color: var(--text-muted);
-            font-size: 16px;
+            font-size: 13px;
             line-height: 1;
             min-width: 24px;
             min-height: 24px;
@@ -347,11 +395,15 @@
             justify-content: center;
         }
 
-        .tag-close:active { color: var(--negative); }
+        .tag-close:hover {
+            color: var(--negative);
+        }
 
-        .hidden { display: none !important; }
+        .hidden {
+            display: none !important;
+        }
 
-        /* ── Table ── */
+        /* ── Table Container (Sticky & Scroll) ── */
         .table-container {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -359,67 +411,123 @@
             overflow: auto;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            max-height: calc(100vh - 60px);
-            max-height: calc(100dvh - 60px);
+            /* ヘッダーやコントロールパネルの高さを差し引き、画面内に収める */
+            max-height: calc(100vh - 170px);
+            max-height: calc(100dvh - 170px);
+            position: relative;
             -webkit-overflow-scrolling: touch;
         }
 
         .frame-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             font-size: 12px;
         }
 
+        /* ── Sticky Header ── */
         .frame-table thead th {
-            background: rgba(15, 23, 42, 0.98);
+            background: var(--bg-secondary);
             color: var(--text-muted);
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.3px;
-            padding: 8px 6px;
+            padding: 10px 8px;
             border-bottom: 2px solid var(--border);
             white-space: nowrap;
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 30; /* 最前面 */
             text-align: center;
         }
 
         .frame-table tbody tr {
-            border-bottom: 1px solid rgba(99, 102, 241, 0.06);
+            transition: background 0.1s;
         }
 
-        .frame-table tbody tr:active {
-            background: rgba(99, 102, 241, 0.08);
+        /* ゼブラストライプ */
+        .frame-table tbody tr:nth-child(even) {
+            background: rgba(52, 96, 251, 0.02);
+        }
+
+        .frame-table tbody tr:hover {
+            background: rgba(52, 96, 251, 0.05) !important;
         }
 
         .frame-table td {
-            padding: 6px;
+            padding: 8px;
+            border-bottom: 1px solid rgba(112, 150, 248, 0.06);
             white-space: nowrap;
             color: var(--text-secondary);
             text-align: center;
         }
 
-        .frame-table td.col-name {
+        /* ── Sticky Columns (キャラ名、技名) ── */
+        /* ヘッダーの固定 */
+        .frame-table th:nth-child(1) {
+            position: sticky;
+            left: 0;
+            z-index: 40;
+            background: var(--bg-secondary);
+            width: 70px;
+            min-width: 70px;
+            max-width: 70px;
+            border-right: 1px solid var(--border);
+        }
+
+        .frame-table th:nth-child(2) {
+            position: sticky;
+            left: 70px;
+            z-index: 40;
+            background: var(--bg-secondary);
+            width: 180px;
+            min-width: 180px;
+            max-width: 180px;
+            border-right: 1px solid var(--border);
+        }
+
+        /* ボディの固定列 */
+        .frame-table td:nth-child(1) {
+            position: sticky;
+            left: 0;
+            z-index: 20;
+            background: var(--bg-primary);
+            width: 70px;
+            min-width: 70px;
+            max-width: 70px;
+            border-right: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 11px;
+            text-align: left;
+        }
+
+        .frame-table td:nth-child(2) {
+            position: sticky;
+            left: 70px;
+            z-index: 20;
+            background: var(--bg-primary);
+            width: 180px;
+            min-width: 180px;
+            max-width: 180px;
+            border-right: 1px solid var(--border);
             color: var(--text-primary);
             font-weight: 500;
             text-align: left;
-            position: sticky;
-            left: 0;
-            background: var(--bg-primary);
-            z-index: 5;
-            min-width: 100px;
-            max-width: 160px;
-            white-space: normal;
-            word-break: break-all;
-            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .frame-table td.col-char-name {
-            color: var(--text-muted);
-            font-size: 10px;
-            text-align: left;
+        /* 偶数行の固定列背景色調整 */
+        .frame-table tbody tr:nth-child(even) td:nth-child(1),
+        .frame-table tbody tr:nth-child(even) td:nth-child(2) {
+            background: #070e1e; /* 偶数行用の少し明るい背景 */
+        }
+
+        /* ホバー時の固定列背景色連動 */
+        .frame-table tbody tr:hover td:nth-child(1),
+        .frame-table tbody tr:hover td:nth-child(2) {
+            background: #0a152d !important;
         }
 
         .frame-table td.col-wrap {
@@ -438,7 +546,7 @@
             white-space: nowrap;
         }
 
-        .type-badge.通常技 { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+        .type-badge.通常技 { background: rgba(52, 96, 251, 0.15); color: #818cf8; }
         .type-badge.特殊技 { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
         .type-badge.必殺技 { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
         .type-badge.スーパーアーツ { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
@@ -464,23 +572,24 @@
         /* ── Scrollbar ── */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.2); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb { background: rgba(52, 96, 251, 0.2); border-radius: 2px; }
 
         /* ── Mobile Responsive ── */
         @media (max-width: 768px) {
             .header { padding: 10px 12px; }
             .header-left h1 { font-size: 16px; }
             .container { padding: 8px; }
-            .controls-panel { padding: 10px; border-radius: 10px; }
-            .controls-row { flex-direction: column; gap: 8px; }
+            .controls-panel { padding: 12px; border-radius: 10px; }
+            .controls-row { flex-direction: column; gap: 8px; align-items: stretch; }
             .control-group { min-width: 100%; }
             .select-input, .search-input { font-size: 16px; } /* prevent iOS zoom */
             .frame-table { font-size: 11px; }
-            .frame-table thead th { padding: 6px 4px; font-size: 9px; }
-            .frame-table td { padding: 5px 4px; font-size: 11px; }
-            .frame-table td.col-name { min-width: 80px; max-width: 120px; font-size: 11px; }
+            .frame-table thead th { padding: 8px 6px; font-size: 9px; }
+            .frame-table td { padding: 6px 4px; font-size: 11px; }
+            .frame-table th:nth-child(1), .frame-table td:nth-child(1) { width: 50px; min-width: 50px; max-width: 50px; }
+            .frame-table th:nth-child(2), .frame-table td:nth-child(2) { left: 50px; width: 120px; min-width: 120px; max-width: 120px; font-size: 11px; }
             .type-badge { font-size: 8px; padding: 1px 5px; }
-            .table-container { border-radius: 10px; }
+            .table-container { border-radius: 10px; max-height: calc(100vh - 200px); max-height: calc(100dvh - 200px); }
             .toggle-group { padding: 6px 8px; }
         }
 
@@ -488,7 +597,8 @@
         @media (max-width: 380px) {
             .header-left h1 { font-size: 14px; }
             .frame-table { font-size: 10px; }
-            .frame-table td.col-name { min-width: 70px; max-width: 100px; }
+            .frame-table th:nth-child(1), .frame-table td:nth-child(1) { width: 40px; min-width: 40px; max-width: 40px; }
+            .frame-table th:nth-child(2), .frame-table td:nth-child(2) { left: 40px; width: 100px; min-width: 100px; max-width: 100px; }
         }
     </style>
 </head>
@@ -537,30 +647,25 @@
                         <option value="sa_gain">SA増加</option>
                     </select>
                 </div>
-            </div>
-
-            <div class="toggles-section">
-                <div class="toggles-header" id="type-toggle-header">
-                    <h4>技の種類</h4>
-                    <span class="chevron">▼</span>
+                <div class="control-group">
+                    <button class="btn" id="btn-toggle-advanced">設定・フィルター ＋</button>
                 </div>
-                <div class="toggles-content" id="type-toggle-content">
+            </div>
+            
+            <!-- 折りたたみ可能な詳細設定エリア -->
+            <div class="advanced-controls" id="advanced-controls">
+                <div class="toggles-section">
+                    <h4>技の種類</h4>
                     <div class="type-chips" id="type-chips"></div>
                 </div>
-            </div>
-
-            <div class="toggles-section">
-                <div class="toggles-header collapsed" id="col-toggle-header">
+                <div class="toggles-section">
                     <h4>表示する列</h4>
-                    <span class="chevron">▼</span>
-                </div>
-                <div class="toggles-content collapsed" id="col-toggle-content" style="max-height:0">
                     <div class="column-toggles-container" id="column-toggles"></div>
                 </div>
             </div>
 
             <div id="added-chars-container" class="added-chars hidden">
-                <h4 style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">比較中</h4>
+                <h4 style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;">比較中</h4>
                 <div class="tags-list" id="added-chars-list"></div>
             </div>
         </section>
@@ -820,25 +925,6 @@
             return n > 0 ? 'adv-positive' : n < 0 ? 'adv-negative' : 'adv-zero';
         };
 
-        // ── Collapsible sections ──
-        function initCollapsible(headerId, contentId) {
-            const header = document.getElementById(headerId);
-            const content = document.getElementById(contentId);
-            header.addEventListener('click', () => {
-                header.classList.toggle('collapsed');
-                if (content.classList.contains('collapsed')) {
-                    content.style.maxHeight = content.scrollHeight + 'px';
-                    content.classList.remove('collapsed');
-                } else {
-                    content.style.maxHeight = '0';
-                    content.classList.add('collapsed');
-                }
-            });
-            if (!content.classList.contains('collapsed')) {
-                content.style.maxHeight = content.scrollHeight + 'px';
-            }
-        }
-
         // ── Init ──
         document.addEventListener('DOMContentLoaded', () => {
             const charList = Object.values(characters).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
@@ -851,8 +937,6 @@
 
             initTypeChips();
             initColumnToggles();
-            initCollapsible('type-toggle-header', 'type-toggle-content');
-            initCollapsible('col-toggle-header', 'col-toggle-content');
 
             sel.addEventListener('change', (e) => { state.mainChar = e.target.value; saveState(); renderTable(); });
             document.getElementById('sort-select').addEventListener('change', (e) => { state.sortBy = e.target.value; renderTable(); });
@@ -873,6 +957,19 @@
                 if (avail.length > 0) { state.addedChars.push(avail[0].id); renderAddedChars(); renderTable(); }
             });
             document.getElementById('btn-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+            // Advanced controls toggle
+            const btnToggle = document.getElementById('btn-toggle-advanced');
+            const advControls = document.getElementById('advanced-controls');
+            btnToggle.addEventListener('click', () => {
+                const isOpen = advControls.classList.toggle('show');
+                btnToggle.textContent = isOpen ? '設定・フィルター －' : '設定・フィルター ＋';
+                if (isOpen) {
+                    btnToggle.classList.add('btn-primary');
+                } else {
+                    btnToggle.classList.remove('btn-primary');
+                }
+            });
 
             renderTable();
         });
