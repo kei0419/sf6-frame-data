@@ -600,6 +600,49 @@
             .frame-table th:nth-child(1), .frame-table td:nth-child(1) { width: 40px; min-width: 40px; max-width: 40px; }
             .frame-table th:nth-child(2), .frame-table td:nth-child(2) { left: 40px; width: 100px; min-width: 100px; max-width: 100px; }
         }
+
+        /* アップデート通知トースト */
+        .update-toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-active);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(52, 96, 251, 0.15);
+            color: var(--text-primary);
+            padding: 12px 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 9999;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90%;
+            width: 400px;
+        }
+        .update-toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        .update-toast-text {
+            font-size: 13px;
+            font-weight: 600;
+            flex-grow: 1;
+        }
+        .update-toast-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .update-toast-btn:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 
@@ -683,12 +726,48 @@
 
     <footer class="footer">SF6 Frame Data — PWA Edition</footer>
 
+    <div id="update-toast" class="update-toast">
+        <span class="update-toast-text">新しいバージョンが利用可能です。</span>
+        <button id="update-toast-btn" class="update-toast-btn">更新</button>
+    </div>
+
     <script src="official_data.js"></script>
 
     <script>
-        // ── Service Worker Registration ──
+        // ── Service Worker Registration & Update Detection ──
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').catch(() => {});
+            navigator.serviceWorker.register('./sw.js').then((reg) => {
+                if (reg.waiting) {
+                    showUpdateToast(reg.waiting);
+                }
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            showUpdateToast(newWorker);
+                        }
+                    });
+                });
+            }).catch(() => {});
+
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
+        }
+
+        function showUpdateToast(worker) {
+            const toast = document.getElementById('update-toast');
+            const btn = document.getElementById('update-toast-btn');
+            if (!toast || !btn) return;
+            toast.classList.add('show');
+            btn.addEventListener('click', () => {
+                worker.postMessage({ action: 'skipWaiting' });
+                toast.classList.remove('show');
+            });
         }
 
         // ── キャラ名マップ ──

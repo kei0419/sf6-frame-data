@@ -1,7 +1,8 @@
-const CACHE_NAME = 'sf6-frame-v22';
+const CACHE_NAME = 'sf6-frame-v23';
 const ASSETS = [
   './',
   './index.html',
+  './throw_visualizer.html',
   './official_data.js',
   './manifest.json',
   './icons/icon-512.png',
@@ -12,7 +13,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -36,4 +36,10 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => cached);
     })
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });
