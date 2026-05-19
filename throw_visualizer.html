@@ -2,328 +2,499 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SF6 投げ抜け・シミー攻防ビジュアライザー</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SF6 投げ抜け・シミー攻防シミュレータ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #0a0e1a;
-            --bg-card: rgba(17, 24, 39, 0.7);
-            --border: rgba(99, 102, 241, 0.15);
+            --bg-primary: #0b132b;
+            --bg-secondary: #1c2541;
+            --bg-tertiary: #3a506b;
+            --bg-hover: #486581;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-focus: #5bc0be;
             --text-primary: #f1f5f9;
-            --text-muted: #64748b;
-            --accent: #6366f1;
-            --color-startup: #22c55e;   /* 緑: 発生 */
-            --color-active: #ef4444;    /* 赤: 攻撃判定(投げ含む) */
-            --color-recovery: #3b82f6;  /* 青: 硬直 */
-            
-            --color-guard: #eab308;     /* 黄色: ガード硬直 */
-            --color-tech-window: #c084fc; /* 紫: 猶予 */
-            --color-shimmy: #94a3b8;    /* 灰: 後ろ下がり */
-            --color-punish: #dc2626;    /* 濃い赤: 被弾・パニカン */
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent: #5bc0be;
+            --accent-glow: rgba(91, 192, 190, 0.15);
+
+            --color-startup: #34d399;     /* 発生: エメラルドグリーン */
+            --color-active: #f43f5e;      /* 攻撃判定: 鮮やかなピンク/レッド */
+            --color-recovery: #3b82f6;    /* 硬直/空振り: 鮮やかなブルー */
+            --color-guard: #f59e0b;       /* ガード: 明るいオレンジ/イエロー */
+            --color-tech-window: #c084fc;  /* 投げ抜け猶予/無敵: パープル */
+            --color-shimmy: #94a3b8;      /* シミー: 灰 */
+            --color-punish: #dc2626;      /* 被弾・パニカン: 赤 */
+            --color-whiff: #ec4899;       /* 投げ空振り隙: ピンク */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            padding: 20px;
+            padding: 16px;
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--bg-hover);
+        }
+
+        /* ヘッダー */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-left h1 {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
             margin: 0;
         }
 
-        h1 {
-            font-size: 20px;
-            color: #818cf8;
-            margin-bottom: 20px;
-            text-align: center;
+        /* ボタン */
+        .btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
-        .controls {
-            background: var(--bg-card);
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* コントロールパネル */
+        .controls-panel {
+            background: var(--bg-secondary);
             border: 1px solid var(--border);
             padding: 16px;
             border-radius: 12px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .controls-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
         }
 
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
-        label {
-            font-size: 12px;
+        .control-group label {
+            font-size: 11px;
+            font-weight: 700;
             color: var(--text-muted);
-            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .control-group label span {
+            color: var(--accent);
+            font-weight: bold;
+        }
+        .control-group label small {
+            font-size: 10px;
+            text-transform: none;
+            color: var(--text-muted);
+            font-weight: normal;
         }
 
-        select, input[type="range"] {
-            background: rgba(15, 23, 42, 0.8);
+        .select-input {
+            width: 100%;
+            background: var(--bg-primary);
             border: 1px solid var(--border);
-            color: white;
-            padding: 8px;
-            border-radius: 6px;
-            font-family: inherit;
+            color: var(--text-primary);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 14px;
+        }
+        .select-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
+        /* レンジスライダーのスタイル */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            outline: none;
+            border: 1px solid var(--border);
+            margin: 8px 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            border: 2px solid var(--bg-secondary);
+            transition: transform 0.1s ease, background-color 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background: var(--text-primary);
+        }
+
+        /* タイムラインコンテナ */
         .timeline-container {
             overflow-x: auto;
-            background: var(--bg-card);
+            background: var(--bg-secondary);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 16px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
 
         .timeline-grid {
             display: grid;
-            grid-template-columns: 100px repeat(40, 24px);
-            gap: 2px;
+            grid-template-columns: 80px repeat(40, 26px);
+            gap: 3px;
             align-items: center;
+            min-width: 1140px; /* 横スクロールが滑らかになるように最低幅を保証 */
         }
 
         .row-header {
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 700;
             text-align: right;
-            padding-right: 12px;
-            color: #a5b4fc;
+            padding-right: 10px;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
         }
 
         .frame-header {
-            font-size: 10px;
+            font-size: 9px;
+            font-weight: 700;
             color: var(--text-muted);
             text-align: center;
         }
 
         .cell {
-            height: 24px;
+            height: 26px;
             border-radius: 4px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.02);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 10px;
-            font-weight: bold;
-            color: white;
+            font-weight: 800;
+            color: #ffffff;
             position: relative;
+            user-select: none;
         }
 
         .cell:hover::after {
             content: attr(data-tooltip);
             position: absolute;
-            bottom: 100%;
+            bottom: 110%;
             left: 50%;
             transform: translateX(-50%);
             background: #000;
+            color: #fff;
             padding: 4px 8px;
             border-radius: 4px;
             white-space: nowrap;
             z-index: 10;
             pointer-events: none;
             border: 1px solid var(--border);
+            font-size: 10px;
         }
 
-        /* 状態ごとの色付け */
-        .atk-throw-start { background: var(--color-startup); color: #000; }
+        /* 状態カラー */
+        .atk-throw-start { background: var(--color-startup); color: #0b132b; }
         .atk-throw-active { background: var(--color-active); }
-        .atk-strike-start { background: var(--color-startup); color: #000; }
+        .atk-strike-start { background: var(--color-startup); color: #0b132b; }
         .atk-strike-active { background: var(--color-active); }
-        .atk-whiff-rec { background: var(--color-recovery); color: #fff; }
-        .atk-shimmy { background: var(--color-shimmy); color: #000; }
+        .atk-whiff-rec { background: var(--color-recovery); }
+        .atk-shimmy { background: var(--color-shimmy); color: #0b132b; }
         .atk-punish { background: var(--color-punish); }
 
-        .def-guard { background: var(--color-guard); color: #000; }
-        .def-tech-window { background: var(--color-tech-window); color: #000; }
-        .def-whiff-start { background: var(--color-startup); color: #000; }
+        .def-guard { background: var(--color-guard); color: #0b132b; }
+        .def-tech-window { background: var(--color-tech-window); color: #0b132b; }
+        .def-whiff-start { background: var(--color-startup); color: #0b132b; }
         .def-whiff-active { background: var(--color-active); }
-        .def-whiff-rec { background: var(--color-recovery); color: #fff; }
+        .def-whiff-rec { background: var(--color-recovery); }
 
+        /* 結果ボックス */
         .result-box {
             padding: 16px;
-            border-radius: 8px;
-            background: rgba(15, 23, 42, 0.9);
+            border-radius: 12px;
+            background: var(--bg-secondary);
             border: 2px solid var(--border);
             text-align: center;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 800;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
         }
 
+        /* 凡例 */
         .legend {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 16px;
             font-size: 11px;
-            margin-top: 10px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
         }
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
         .color-box {
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         /* マトリクス表 */
+        .matrix-title {
+            margin: 24px 0 12px 0;
+            color: var(--accent);
+            text-align: center;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
         .matrix-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
-            background: rgba(15, 23, 42, 0.4);
+            font-size: 11px;
+            background: var(--bg-secondary);
             border-radius: 8px;
             overflow: hidden;
+            border: 1px solid var(--border);
         }
         .matrix-table th, .matrix-table td {
             border: 1px solid var(--border);
-            padding: 10px 8px;
+            padding: 10px 6px;
             text-align: center;
         }
         .matrix-table th {
-            background: rgba(15, 23, 42, 0.9);
-            color: #a5b4fc;
-            font-weight: 600;
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-secondary);
+            font-weight: 700;
         }
         .matrix-table td:first-child {
-            background: rgba(15, 23, 42, 0.9);
-            color: #a5b4fc;
-            font-weight: 600;
+            background: rgba(0, 0, 0, 0.15);
+            color: var(--text-primary);
+            font-weight: 700;
             text-align: left;
+            padding-left: 12px;
         }
         
-        .res-atk-win { color: var(--color-punish); font-weight: bold; background: rgba(220, 38, 38, 0.1); }
-        .res-def-win { color: var(--color-startup); font-weight: bold; background: rgba(34, 197, 94, 0.1); }
-        .res-guard { color: var(--color-guard); font-weight: bold; }
-        .res-tech { color: var(--color-tech-window); font-weight: bold; }
-        .res-evade { color: var(--text-muted); }
+        .res-atk-win { color: #f87171; font-weight: 800; background: rgba(220, 38, 38, 0.15); }
+        .res-def-win { color: #34d399; font-weight: 800; background: rgba(52, 211, 153, 0.15); }
+        .res-guard { color: var(--color-guard); font-weight: 800; background: rgba(245, 158, 11, 0.08); }
+        .res-tech { color: #c084fc; font-weight: 800; background: rgba(192, 132, 252, 0.1); }
+        .res-evade { color: var(--text-muted); background: rgba(255,255,255,0.01); }
 
         .interactive-cell {
             cursor: pointer;
-            transition: all 0.1s ease;
+            transition: all 0.15s ease;
         }
         .interactive-cell:hover {
-            filter: brightness(1.3);
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 0 0 1px var(--accent);
+        }
+
+        /* レスポンシブ調整 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .header {
+                padding: 10px;
+                margin-bottom: 12px;
+            }
+            .header-left h1 {
+                font-size: 14px;
+            }
+            .btn {
+                padding: 5px 8px;
+                font-size: 10px;
+            }
+            .controls-row {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .controls-panel {
+                padding: 12px;
+                margin-bottom: 12px;
+            }
+            .timeline-container {
+                padding: 10px;
+                margin-bottom: 12px;
+            }
+            .matrix-table {
+                font-size: 10px;
+            }
+            .matrix-table th, .matrix-table td {
+                padding: 8px 4px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <h1>SF6 投げ抜け・シミー攻防ビジュアライザー</h1>
+    <div class="container">
+        <header class="header">
+            <div class="header-left">
+                <a href="index.html" class="btn">← フレームデータ表</a>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 3 22 12 19 21 5 21 2 12 5 3"></polygon>
+                </svg>
+                <h1>投げ抜け・シミー攻防シミュレータ</h1>
+            </div>
+        </header>
 
-    <div class="controls">
-        <div class="control-group">
-            <label>攻撃側（起き攻め）</label>
-            <select id="atkAction" autocomplete="off">
-                <option value="throw">投げ</option>
-                <option value="strike">打撃</option>
-                <option value="shimmy">シミー（後ろ歩き）</option>
-            </select>
-        </div>
-        <div class="control-group" id="throwTimingGroup">
-            <label>投げの着弾（重なり）: <span id="throwVal">5</span>F目 <small>(※5Fが埋めなし最速)</small></label>
-            <input type="range" id="throwSlider" min="1" max="10" value="5">
-        </div>
-        <div class="control-group" id="strikeTimingGroup">
-            <label>打撃の着弾（重なり）: <span id="strikeVal">2</span>F目 <small>(※1Fが最速)</small></label>
-            <input type="range" id="strikeSlider" min="1" max="10" value="2">
-        </div>
-        <div class="control-group" id="shimmyTimingGroup" style="display: none;">
-            <label>シミー: <span id="shimmyVal">2</span>F</label>
-            <input type="range" id="shimmySlider" min="0" max="14" value="2">
-        </div>
-        <div class="control-group">
-            <label>防御側（起き上がり）</label>
-            <select id="defAction" autocomplete="off">
-                <option value="tech-delay">グラップ（タイミング指定）</option>
-                <option value="tech-fast">最速投げ抜け</option>
-                <option value="abare">暴れ（打撃）</option>
-                <option value="backdash">バクステ（1-15F投げ無敵）</option>
-                <option value="guard">ガード継続</option>
-            </select>
-        </div>
-        <div class="control-group" id="abareTimingGroup" style="display: none;">
-            <label>暴れの発生フレーム: <span id="abareVal">4</span>F</label>
-            <input type="range" id="abareSlider" min="4" max="15" value="4">
-        </div>
-        <div class="control-group" id="defTimingGroup">
-            <label>投げ遅らせ: <span id="delayVal">5</span>F遅らせ <small>(※0Fが最速)</small></label>
-            <input type="range" id="delaySlider" min="0" max="14" value="5">
-        </div>
-    </div>
+        <section class="controls-panel">
+            <div class="controls-row">
+                <div class="control-group">
+                    <label>攻撃側（起き攻め）</label>
+                    <select id="atkAction" class="select-input" autocomplete="off">
+                        <option value="throw">投げ</option>
+                        <option value="strike">打撃</option>
+                        <option value="shimmy">シミー（後ろ歩き）</option>
+                    </select>
+                </div>
+                <div class="control-group" id="throwTimingGroup">
+                    <label>投げの着弾（重なり）: <span id="throwVal">5</span>F目 <small>(※5Fが埋めなし最速)</small></label>
+                    <input type="range" id="throwSlider" min="1" max="10" value="5">
+                </div>
+                <div class="control-group" id="strikeTimingGroup">
+                    <label>打撃の着弾（重なり）: <span id="strikeVal">2</span>F目 <small>(※1Fが最速)</small></label>
+                    <input type="range" id="strikeSlider" min="1" max="10" value="2">
+                </div>
+                <div class="control-group" id="shimmyTimingGroup" style="display: none;">
+                    <label>シミー: <span id="shimmyVal">2</span>F</label>
+                    <input type="range" id="shimmySlider" min="0" max="14" value="2">
+                </div>
+                <div class="control-group">
+                    <label>防御側（起き上がり）</label>
+                    <select id="defAction" class="select-input" autocomplete="off">
+                        <option value="tech-delay">グラップ（タイミング指定）</option>
+                        <option value="tech-fast">最速投げ抜け</option>
+                        <option value="abare">暴れ（打撃）</option>
+                        <option value="backdash">バクステ（1-15F投げ無敵）</option>
+                        <option value="guard">ガード継続</option>
+                    </select>
+                </div>
+                <div class="control-group" id="abareTimingGroup" style="display: none;">
+                    <label>暴れの発生フレーム: <span id="abareVal">4</span>F</label>
+                    <input type="range" id="abareSlider" min="4" max="15" value="4">
+                </div>
+                <div class="control-group" id="defTimingGroup">
+                    <label>投げ遅らせ: <span id="delayVal">5</span>F遅らせ <small>(※0Fが最速)</small></label>
+                    <input type="range" id="delaySlider" min="0" max="14" value="5">
+                </div>
+            </div>
+        </section>
 
-    <div class="timeline-container">
-        <div class="timeline-grid" id="grid">
-            <!-- JSで描画 -->
+        <div class="timeline-container">
+            <div class="timeline-grid" id="grid">
+                <!-- JSで描画 -->
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item"><div class="color-box" style="background: var(--color-startup)"></div>発生前(緑)</div>
+                <div class="legend-item"><div class="color-box" style="background: var(--color-active)"></div>攻撃判定(赤)</div>
+                <div class="legend-item"><div class="color-box" style="background: var(--color-recovery)"></div>硬直/隙(青)</div>
+                <div class="legend-item"><div class="color-box" style="background: var(--color-guard)"></div>ガード(黄)</div>
+                <div class="legend-item"><div class="color-box" style="background: var(--color-tech-window)"></div>投げ抜け/無敵(紫)</div>
+            </div>
         </div>
-        
-        <div class="legend">
-            <div class="legend-item"><div class="color-box" style="background: var(--color-startup)"></div>発生前(緑)</div>
-            <div class="legend-item"><div class="color-box" style="background: var(--color-active)"></div>攻撃判定(赤)</div>
-            <div class="legend-item"><div class="color-box" style="background: var(--color-recovery)"></div>硬直(青)</div>
-            <div class="legend-item"><div class="color-box" style="background: var(--color-guard)"></div>ガード</div>
-            <div class="legend-item"><div class="color-box" style="background: var(--color-tech-window)"></div>投げ抜け猶予</div>
+
+        <div class="result-box" id="resultText">
+            結果を計算中...
         </div>
-    </div>
 
-    <div class="result-box" id="resultText">
-        結果を計算中...
-    </div>
-
-    <h2 style="margin-top: 40px; color: #818cf8; text-align: center; font-size: 18px;">起き攻めマトリクス（基本のじゃんけん）</h2>
-    <div class="timeline-container">
-        <table class="matrix-table">
-            <thead>
-                <tr>
-                    <th>攻撃側 \ 防御側</th>
-                    <th>最速投げ抜け</th>
-                    <th>遅らせグラップ (6F入力)</th>
-                    <th>4F暴れ (小技)</th>
-                    <th>ガード継続</th>
-                    <th>バクステ (1F〜空中)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>最速投げ (発生5F)</td>
-                    <td class="res-tech">✨ 抜け成立</td>
-                    <td class="res-tech">✨ 抜け成立</td>
-                    <td class="res-atk-win">💥 投げ勝ち</td>
-                    <td class="res-atk-win">💥 投げ勝ち</td>
-                    <td class="res-def-win">💨 回避 (確反)</td>
-                </tr>
-                <tr>
-                    <td>最速打撃 (持続当て想定2F)</td>
-                    <td class="res-atk-win">💥 カウンター</td>
-                    <td class="res-guard">🛡️ ガード</td>
-                    <td class="res-atk-win">💥 カウンター</td>
-                    <td class="res-guard">🛡️ ガード</td>
-                    <td class="res-atk-win">💥 ヒット</td>
-                </tr>
-                <tr>
-                    <td>遅らせ打撃 (重なり7F想定)</td>
-                    <td class="res-atk-win">☠️ パニカン</td>
-                    <td class="res-atk-win">💥 カウンター</td>
-                    <td class="res-def-win">🎉 暴れ勝ち</td>
-                    <td class="res-guard">🛡️ ガード</td>
-                    <td class="res-guard">🛡️ ガード</td>
-                </tr>
-                <tr>
-                    <td>シミー (後ろ歩き)</td>
-                    <td class="res-atk-win">☠️ パニカン</td>
-                    <td class="res-atk-win">☠️ パニカン</td>
-                    <td class="res-atk-win">☠️ パニカン (スカ)</td>
-                    <td class="res-evade">👀 様子見</td>
-                    <td class="res-evade">👀 様子見</td>
-                </tr>
-            </tbody>
-        </table>
+        <h2 class="matrix-title">起き攻めマトリクス（基本のじゃんけん）</h2>
+        <div class="timeline-container" style="overflow-x: auto;">
+            <table class="matrix-table">
+                <!-- JSで動的描画 -->
+            </table>
+        </div>
     </div>
 
     <script>
