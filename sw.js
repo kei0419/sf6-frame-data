@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sf6-frame-v24';
+const CACHE_NAME = 'sf6-frame-v25';
 const ASSETS = [
   './',
   './index.html',
@@ -24,16 +24,21 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Stale While Revalidate: キャッシュを即座に返しつつ、裏で最新版を取得して更新
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((response) => {
-        if (response.ok && event.request.method === 'GET') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.match(event.request).then((cached) => {
+        const fetchPromise = fetch(event.request).then((response) => {
+          if (response.ok && event.request.method === 'GET') {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        }).catch(() => cached);
+
+        // キャッシュがあればすぐ返す（裏でfetchが走り、次回から最新になる）
+        return cached || fetchPromise;
+      });
     })
   );
 });
