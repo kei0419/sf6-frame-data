@@ -40,7 +40,8 @@ CHARACTERS = [
     "ryu", "luke", "jamie", "chunli", "guile", "kimberly", "juri", "ken",
     "blanka", "dhalsim", "ehonda", "deejay", "manon", "marisa",
     "jp", "zangief", "lily", "cammy", "rashid", "aki", "ed", "gouki_akuma",
-    "vega_mbison", "terry", "mai", "elena", "sagat", "cviper", "alex"
+    "vega_mbison", "terry", "mai", "elena", "sagat", "cviper", "alex",
+    "ingrid", "yasmine"
 ]
 
 # URLスラッグ → official_data.jsでのキー名マッピング
