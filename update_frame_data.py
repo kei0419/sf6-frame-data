@@ -41,7 +41,7 @@ CHARACTERS = [
     "blanka", "dhalsim", "ehonda", "deejay", "manon", "marisa",
     "jp", "zangief", "lily", "cammy", "rashid", "aki", "ed", "gouki_akuma",
     "vega_mbison", "terry", "mai", "elena", "sagat", "cviper", "alex",
-    "ingrid"
+    "ingrid", "yasmine"
 ]
 
 # URLスラッグ → official_data.jsでのキー名マッピング
