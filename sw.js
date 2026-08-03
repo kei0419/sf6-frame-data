@@ -1,11 +1,13 @@
-const CACHE_NAME = 'sf6-frame-v26';
+const CACHE_NAME = 'sf6-frame-v27';
 const ASSETS = [
   './',
   './index.html',
   './throw_visualizer.html',
   './official_data.js',
   './manifest.json',
+  './icons/icon-192.png',
   './icons/icon-512.png',
+  './icons/apple-touch-icon.png',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
 ];
 
