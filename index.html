@@ -644,6 +644,46 @@
         .update-toast-btn:hover {
             opacity: 0.9;
         }
+
+        /* ── Sortable Table Header & Controls ── */
+        .frame-table thead th.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s, background 0.15s;
+        }
+        .frame-table thead th.sortable:hover {
+            color: var(--text-primary);
+            background: rgba(52, 96, 251, 0.18);
+        }
+        .frame-table thead th.sort-active {
+            color: #818cf8;
+        }
+        .sort-row {
+            display: flex;
+            gap: 6px;
+            align-items: stretch;
+        }
+        .btn-sort-dir {
+            min-width: 44px;
+            padding: 0 10px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* ── Add Character Select Wrapper ── */
+        .add-char-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+        .add-char-select-overlay {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+            font-size: 16px;
+        }
     </style>
 </head>
 
@@ -659,7 +699,10 @@
         </div>
         <div class="header-right">
             <a href="throw_visualizer.html" class="btn" style="text-decoration: none; font-size: 11px; padding: 6px 10px; color: var(--text-primary);">投げシミュレータ ➔</a>
-            <button class="btn" id="btn-add-char">＋</button>
+            <div class="add-char-wrapper" title="比較するキャラクターを追加">
+                <button class="btn" id="btn-add-char" type="button">＋ 比較</button>
+                <select id="add-char-select" class="add-char-select-overlay" aria-label="比較するキャラクターを追加"></select>
+            </div>
             <button class="btn" id="btn-top" title="トップへ">↑</button>
         </div>
     </header>
@@ -677,20 +720,26 @@
                 </div>
                 <div class="control-group">
                     <label>並べ替え</label>
-                    <select id="sort-select" class="select-input">
-                        <option value="default">デフォルト</option>
-                        <option value="damage">ダメージ</option>
-                        <option value="startup">発生</option>
-                        <option value="active">持続</option>
-                        <option value="total">全体</option>
-                        <option value="adv_guard">ガード硬直差</option>
-                        <option value="adv_hit">ヒット硬直差</option>
-                        <option value="adv_ch">カウンター硬直差</option>
-                        <option value="adv_pc">パニカン硬直差</option>
-                        <option value="d_hit">Dヒット</option>
-                        <option value="d_guard">Dガード</option>
-                        <option value="sa_gain">SA増加</option>
-                    </select>
+                    <div class="sort-row">
+                        <select id="sort-select" class="select-input">
+                            <option value="default">デフォルト</option>
+                            <option value="damage">ダメージ</option>
+                            <option value="startup">発生</option>
+                            <option value="active">持続</option>
+                            <option value="recovery">硬直</option>
+                            <option value="total">全体</option>
+                            <option value="adv_guard">ガード硬直差</option>
+                            <option value="adv_hit">ヒット硬直差</option>
+                            <option value="adv_ch">カウンター硬直差</option>
+                            <option value="adv_pc">パニカン硬直差</option>
+                            <option value="adv_dr_guard">Dガード硬直差</option>
+                            <option value="adv_dr_hit">Dヒット硬直差</option>
+                            <option value="d_hit">Dヒットゲージ</option>
+                            <option value="d_guard">Dガードゲージ</option>
+                            <option value="sa_gain">SA増加</option>
+                        </select>
+                        <button type="button" class="btn btn-sort-dir hidden" id="btn-sort-dir" title="昇順 / 降順を切り替え">▲</button>
+                    </div>
                 </div>
                 <div class="control-group">
                     <button class="btn" id="btn-toggle-advanced">設定・フィルター ＋</button>
@@ -710,7 +759,10 @@
             </div>
 
             <div id="added-chars-container" class="added-chars hidden">
-                <h4 style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;">比較中</h4>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <h4 style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">比較中</h4>
+                    <button type="button" id="btn-clear-chars" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;text-decoration:underline;">すべて解除</button>
+                </div>
                 <div class="tags-list" id="added-chars-list"></div>
             </div>
         </section>
@@ -790,12 +842,8 @@
 
         const addAdv = (base, add) => {
             if (base === undefined || base === null || base === '-' || base === '') return '-';
-            const n = parseInt(String(base).trim());
+            const n = parseInt(String(base).trim(), 10);
             return isNaN(n) ? String(base).trim() : String(n + add);
-        };
-        const calcTotal = (s, a, r) => {
-            const ns = parseInt(s), na = parseInt(a), nr = parseInt(r);
-            return (!isNaN(ns) && !isNaN(na) && !isNaN(nr)) ? String(ns + na + nr - 1) : String(r || '-').trim();
         };
 
         Object.keys(rawData).forEach(key => {
@@ -810,132 +858,158 @@
                 const name = rm.name || '-';
                 const hit = rm.hit !== undefined ? rm.hit : '-';
                 const block = rm.block !== undefined ? rm.block : '-';
-                const startup = rm.startup || '-';
+                let startup = rm.startup || '-';
+                if (startup === '0') startup = '-';
                 let active = rm.active || '-';
-                if (typeof active === 'string') {
-                    active = active.replace(/(\d+)\s*-\s*(\d+)/g, '$1-$2');
-                }
-                const recovery = rm.recovery || '-';
+                if (active === '0') active = '-';
+                let recovery = rm.recovery || '-';
+                if (recovery === '0') recovery = '-';
 
-                // キャプコン公式データ特有の持続表記対策 (例: "11-2911-13, 17-19, 26-29" -> "11-29"と後続の注釈に分離)
+                if (typeof active === 'string') {
+                    // 連続ハイフン("23--33")やスペース付きハイフンを正規化
+                    active = active.replace(/(\d+)\s*-+\s*(\d+)/g, '$1-$2').trim();
+                }
+
+                // 持続表記と多段内訳の分離
                 let activeNote = '';
-                const m = active.match(/^(\d+(?:-\d+)?)/);
-                if (m) {
-                    const baseStr = m[1]; // 例: "11-2911" まで最初に長くマッチしてしまうので調整
-                    // 発生(startup)と同じ数字で始まる注釈がくっついているケースが多い (あるいは単純に持続の開始フレーム)
-                    // 一旦正規表現ではなく、"-"で区切って文字列の妥当性を確認する
-                    const hyphenIdx = active.indexOf('-');
-                    if (hyphenIdx !== -1) {
-                        // 次の - や , が来るまでの数字の塊を探す
-                        const matchNext = active.substring(hyphenIdx + 1).match(/^\d+/);
-                        if (matchNext) {
-                            const endFrameStr = matchNext[0];
-                            const extractedBase = active.substring(0, hyphenIdx + 1 + endFrameStr.length);
-                            const remaining = active.substring(extractedBase.length);
-                            
-                            // "11-2911"のようになっていたら、"11-29"と"11"に分ける (大抵後ろの数字の桁数は2か1)
-                            // remainingの先頭が数字(例:"-13")なら、extractedBaseの末尾の数字を削るかどうか判定
-                            if (remaining && /^\s*-/.test(remaining) && extractedBase.length > 3) {
-                                // "11-29" + "11" + "-13..." みたいなケース
-                                const matchOverlap = extractedBase.match(/^(\d+-\d{1,2})(\d{1,2})$/);
-                                if (matchOverlap) {
-                                    active = matchOverlap[1];
-                                    activeNote = matchOverlap[2] + remaining;
-                                } else {
-                                    active = extractedBase;
-                                    activeNote = remaining;
-                                }
-                            } else if (remaining && /^\s*,/.test(remaining) && extractedBase.length > 3) {
-                                // "13-4413" + ", 18..." みたいなケース
-                                const matchOverlap = extractedBase.match(/^(\d+-\d{1,2})(\d{1,2})$/);
-                                if (matchOverlap) {
-                                    active = matchOverlap[1];
-                                    activeNote = matchOverlap[2] + remaining;
-                                } else {
-                                    active = extractedBase;
-                                    activeNote = remaining;
-                                }
-                            } else {
-                                active = extractedBase;
-                                activeNote = remaining;
-                            }
-                        }
+                let prefixNote = '';
+
+                // ドライブパリィ等の "[※2] 1-12" 対応
+                const prefMatch = active.match(/^(\[※\d+\])\s*(.+)$/);
+                if (prefMatch) {
+                    prefixNote = prefMatch[1];
+                    active = prefMatch[2].trim();
+                }
+
+                // リュウの強波掌撃等の "30-34.35" 対応
+                const dotMatch = active.match(/^(\d+)-(\d+)\.(\d+)$/);
+                if (dotMatch) {
+                    active = `${dotMatch[1]}-${dotMatch[3]}`;
+                    activeNote = `${dotMatch[1]}-${dotMatch[2]}, ${dotMatch[3]}`;
+                } else {
+                    // 新形式: "18-100 (18-23, 27-28, ...)"
+                    const parenMatch = active.match(/^([^\s(]+)\s*\((.+)\)$/);
+                    if (parenMatch) {
+                        active = parenMatch[1].trim();
+                        activeNote = parenMatch[2].trim();
                     } else {
-                        // ハイフンがない場合 (例:"13")
-                        const matchSolo = active.match(/^(\d+)/);
-                        if (matchSolo) {
-                            const extractedBase = matchSolo[1];
-                            const remaining = active.substring(extractedBase.length);
-                            active = extractedBase;
-                            activeNote = remaining;
+                        // 旧形式・その他の文字列: "18-10018-23..." や "122-131、170-179※"
+                        const mStart = active.match(/^(\d+)-(\d+)(.*)$/);
+                        if (mStart) {
+                            const actStart = mStart[1];
+                            const endDigits = mStart[2];
+                            const rem = mStart[3];
+                            if (rem && /^\s*[-,]/.test(rem) && endDigits.length > actStart.length && endDigits.endsWith(actStart)) {
+                                const realEnd = endDigits.slice(0, -actStart.length);
+                                active = `${actStart}-${realEnd}`;
+                                activeNote = actStart + rem;
+                            } else {
+                                active = `${actStart}-${endDigits}`;
+                                activeNote = rem;
+                            }
+                        } else {
+                            const matchSolo = active.match(/^(\d+)(.*)$/);
+                            if (matchSolo && !active.includes('着地まで')) {
+                                active = matchSolo[1];
+                                activeNote = matchSolo[2];
+                            }
                         }
                     }
                 }
 
-                // 先頭や末尾の空白カンマなどを掃除
-                activeNote = activeNote.replace(/^[\s,]+/, '').trim();
+                // 不要な記号のみの注釈（"※" 単体など）を掃除
+                activeNote = activeNote.replace(/^[\s,、※]+/, '').replace(/※$/, '').trim();
                 if (activeNote) {
                     activeNote = `※持続内訳: ${activeNote}`;
                 }
+                if (prefixNote) {
+                    activeNote = activeNote ? `${prefixNote} ${activeNote}` : prefixNote;
+                }
 
                 let activeDisplay = active;
-                let total = '-';
-                const recMatch = String(recovery).match(/(\d+)/);
-                const recNum = recMatch ? parseInt(recMatch[1]) : NaN;
-
+                let actEndFrame = NaN;
                 const mRange = active.match(/^(\d+)-(\d+)$/);
                 if (mRange) {
-                    const actStart = parseInt(mRange[1]);
-                    const actEnd = parseInt(mRange[2]);
+                    const actStart = parseInt(mRange[1], 10);
+                    const actEnd = parseInt(mRange[2], 10);
                     activeDisplay = String(actEnd - actStart + 1);
-                    if (!isNaN(recNum)) {
-                        total = String(actEnd + recNum);
-                    }
-                } else {
-                    const actNum = parseInt(active);
-                    if (!isNaN(actNum)) {
-                        if (/^\d+$/.test(active)) {
-                            activeDisplay = '1';
+                    actEndFrame = actEnd;
+                } else if (/^\d+$/.test(active)) {
+                    activeDisplay = '1';
+                    actEndFrame = parseInt(active, 10);
+                }
+
+                // 全体フレーム算出
+                let total = '-';
+                const recStr = String(recovery).trim();
+                const isAirMove = (name.includes('ジャンプ') && !name.includes('ハイジャンプ') && !name.includes('レイドジャンプ')) || recStr.startsWith('着地') || active.includes('着地まで');
+
+                if (!isAirMove && recStr !== '-') {
+                    if (recStr.includes('全体')) {
+                        // "全体 45" などは既に全体フレームを表すためそのまま抽出
+                        const totMatch = recStr.match(/(\d+)/);
+                        if (totMatch) total = totMatch[1];
+                    } else if (recStr.includes('+') || recStr.includes('＋')) {
+                        // "21+着地後12" のように + で結ばれている場合は合算する
+                        const nums = recStr.match(/\d+/g);
+                        if (nums && nums.length > 0) {
+                            const recSum = nums.reduce((acc, v) => acc + parseInt(v, 10), 0);
+                            total = !isNaN(actEndFrame) ? String(actEndFrame + recSum) : String(recSum);
                         }
-                        if (!isNaN(recNum)) {
-                            total = String(actNum + recNum);
+                    } else {
+                        // 単一数値または "74※107" などは先頭の数値を採用
+                        const recMatch = recStr.match(/(\d+)/);
+                        if (recMatch) {
+                            const recNum = parseInt(recMatch[1], 10);
+                            total = !isNaN(actEndFrame) ? String(actEndFrame + recNum) : String(recNum);
                         }
-                    } else if (!isNaN(recNum)) {
-                        total = String(recNum);
                     }
                 }
 
-                if (name.includes('ジャンプ')) total = '-';
-
-                let adv_pc = addAdv(hit, 4);
                 let notes = rm.notes || '-';
-                
-                // 「パニッシュカウンター時+XXF」表記から数値を抽出（備考欄のテキストはそのまま残す）
-                const pcRegex = /(※?地上)?パニッシュカウンター[^、]*?([＋+]\s*\d+[Ff]?)/;
-                const match = notes.match(pcRegex);
-                if (match) {
-                    let valStr = match[2].replace(/[＋+]\s*/, '+').replace(/[Ff]/, '');
-                    adv_pc = valStr;
+                let adv_ch = addAdv(hit, 2);
+                let adv_pc = addAdv(hit, 4);
+
+                // 「カウンター/パニッシュカウンターで数値が変動しない」技の対応
+                if (notes.includes('カウンター/パニッシュカウンターで数値が変動しない')) {
+                    adv_ch = hit;
+                    adv_pc = hit;
+                } else {
+                    // 「パニッシュカウンター時+XXF」表記から数値を抽出
+                    const pcRegex = /(※?地上)?パニッシュカウンター[^、]*?([＋+]\s*\d+[Ff]?)/;
+                    const match = notes.match(pcRegex);
+                    if (match) {
+                        adv_pc = match[2].replace(/[＋+]\s*/, '+').replace(/[Ff]/, '');
+                    }
+                    // カウンター時にダウン・吹き飛び・膝崩れになる技の対応
+                    if (/(?:^|[、\s])(?:※?地上)?カウンター(?:\/パニッシュカウンター)?時[^、]*?(?:膝崩れ|膝くずれ|吹き飛びダウン|ダウン)/.test(notes)) {
+                        adv_ch = '-';
+                    }
+                    // パニカン時に膝崩れ・吹き飛びダウンになる技の対応
+                    if (notes.includes('パニッシュカウンター') && (notes.includes('膝崩れ') || notes.includes('膝くずれ') || notes.includes('吹き飛びダウン'))) {
+                        adv_pc = '-';
+                    }
                 }
+
+                // ドライブラッシュ時の硬直差（+4F）は地上の通常技・特殊技のみ適用
+                const moveType = rm.type || '通常技';
+                const isDrApplicable = (moveType === '通常技' || moveType === '特殊技') && !isAirMove && !(rm.cmd_c || '').includes('ジャンプ中');
+                const adv_dr_guard = isDrApplicable ? addAdv(block, 4) : '-';
+                const adv_dr_hit = isDrApplicable ? addAdv(hit, 4) : '-';
 
                 // 備考欄に持続内訳を追記
                 if (activeNote) {
-                    notes = notes === '-' ? activeNote : (notes + ' / ' + activeNote);
-                }
-                
-                // ただし「膝崩れ」や「吹き飛びダウン」表記を含む場合はパニカン欄を無表記(-)にする
-                if (notes.includes('パニッシュカウンター') && (notes.includes('膝崩れ') || notes.includes('膝くずれ') || notes.includes('吹き飛びダウン'))) {
-                    adv_pc = '-';
+                    notes = notes === '-' ? activeNote : (notes + '、 ' + activeNote);
                 }
 
                 return {
                     name, cmd_c: rm.cmd_c || '-', damage: rm.damage || '-',
-                    startup, active: activeDisplay, total,
+                    startup, active: activeDisplay, recovery, total,
                     adv_guard: block, adv_hit: hit,
-                    adv_ch: addAdv(hit, 2), adv_pc: adv_pc,
-                    adv_dr_guard: addAdv(block, 4), adv_dr_hit: addAdv(hit, 4),
+                    adv_ch, adv_pc,
+                    adv_dr_guard, adv_dr_hit,
                     cancel: rm.cancel !== undefined ? rm.cancel : '-',
-                    attr: rm.attr || '-', type: rm.type || '通常技',
+                    attr: rm.attr || '-', type: moveType,
                     d_hit: rm.d_hit || '-', d_guard: rm.d_guard || '-', d_pc: rm.d_pc || '-',
                     sa_gain: rm.sa_gain || '-', scaling: rm.scaling || '-', notes: notes,
                 };
@@ -949,22 +1023,23 @@
         const columnsDef = [
             { id: 'type', label: '種類', group: '基本', defaultOn: !isMobile, isType: true },
             { id: 'cmd_c', label: 'コマンド', group: '基本', defaultOn: true },
-            { id: 'damage', label: 'ダメージ', group: '基本', defaultOn: true },
-            { id: 'startup', label: '発生', group: 'フレーム', defaultOn: true },
-            { id: 'active', label: '持続', group: 'フレーム', defaultOn: !isMobile },
-            { id: 'total', label: '全体', group: 'フレーム', defaultOn: false },
-            { id: 'adv_guard', label: 'ガード', group: '硬直差', defaultOn: true, isAdv: true },
-            { id: 'adv_hit', label: 'ヒット', group: '硬直差', defaultOn: true, isAdv: true },
-            { id: 'adv_ch', label: 'カウンター', group: '硬直差', defaultOn: !isMobile, isAdv: true },
-            { id: 'adv_pc', label: 'パニカン', group: '硬直差', defaultOn: !isMobile, isAdv: true },
-            { id: 'adv_dr_guard', label: 'Dガード', group: '硬直差', defaultOn: false, isAdv: true },
-            { id: 'adv_dr_hit', label: 'Dヒット', group: '硬直差', defaultOn: false, isAdv: true },
+            { id: 'damage', label: 'ダメージ', group: '基本', defaultOn: true, sortable: true, defaultAsc: false },
+            { id: 'startup', label: '発生', group: 'フレーム', defaultOn: true, sortable: true, defaultAsc: true },
+            { id: 'active', label: '持続', group: 'フレーム', defaultOn: !isMobile, sortable: true, defaultAsc: true },
+            { id: 'recovery', label: '硬直', group: 'フレーム', defaultOn: false, sortable: true, defaultAsc: true },
+            { id: 'total', label: '全体', group: 'フレーム', defaultOn: false, sortable: true, defaultAsc: true },
+            { id: 'adv_guard', label: 'ガード', group: '硬直差', defaultOn: true, isAdv: true, sortable: true, defaultAsc: false },
+            { id: 'adv_hit', label: 'ヒット', group: '硬直差', defaultOn: true, isAdv: true, sortable: true, defaultAsc: false },
+            { id: 'adv_ch', label: 'カウンター', group: '硬直差', defaultOn: !isMobile, isAdv: true, sortable: true, defaultAsc: false },
+            { id: 'adv_pc', label: 'パニカン', group: '硬直差', defaultOn: !isMobile, isAdv: true, sortable: true, defaultAsc: false },
+            { id: 'adv_dr_guard', label: 'Dガード', group: '硬直差', defaultOn: false, isAdv: true, sortable: true, defaultAsc: false },
+            { id: 'adv_dr_hit', label: 'Dヒット', group: '硬直差', defaultOn: false, isAdv: true, sortable: true, defaultAsc: false },
             { id: 'cancel', label: 'キャンセル', group: '属性', defaultOn: !isMobile },
             { id: 'attr', label: '属性', group: '属性', defaultOn: !isMobile },
-            { id: 'd_hit', label: 'Dヒット', group: 'ドライブ', defaultOn: false },
-            { id: 'd_guard', label: 'Dガード', group: 'ドライブ', defaultOn: false },
-            { id: 'd_pc', label: 'Dパニカン', group: 'ドライブ', defaultOn: false },
-            { id: 'sa_gain', label: 'SA増加', group: 'SA', defaultOn: false },
+            { id: 'd_hit', label: 'Dヒット', group: 'ドライブ', defaultOn: false, sortable: true, defaultAsc: false },
+            { id: 'd_guard', label: 'Dガード', group: 'ドライブ', defaultOn: false, sortable: true, defaultAsc: false },
+            { id: 'd_pc', label: 'Dパニカン', group: 'ドライブ', defaultOn: false, sortable: true, defaultAsc: false },
+            { id: 'sa_gain', label: 'SA増加', group: 'SA', defaultOn: false, sortable: true, defaultAsc: false },
             { id: 'scaling', label: '補正', group: '補正', defaultOn: false },
             { id: 'notes', label: '備考', group: '備考', defaultOn: !isMobile, isNotes: true },
         ];
@@ -976,13 +1051,19 @@
             try { return JSON.parse(localStorage.getItem('sf6_state')) || {}; } catch { return {}; }
         })();
         const state = {
-            mainChar: savedState.mainChar || 'ed', addedChars: [], sortBy: 'default', searchQuery: '',
+            mainChar: savedState.mainChar || 'ed',
+            addedChars: [],
+            sortBy: 'default',
+            sortAsc: true,
+            searchQuery: '',
             visibleColumns: savedState.visibleColumns || {},
             visibleTypes: savedState.visibleTypes || ['通常技', '特殊技', '必殺技', 'スーパーアーツ', '通常投げ'],
         };
-        if (Object.keys(state.visibleColumns).length === 0) {
-            columnsDef.forEach(c => { state.visibleColumns[c.id] = c.defaultOn; });
-        }
+        columnsDef.forEach(c => {
+            if (state.visibleColumns[c.id] === undefined) {
+                state.visibleColumns[c.id] = c.defaultOn;
+            }
+        });
 
         const saveState = () => {
             try {
@@ -994,22 +1075,54 @@
             } catch {}
         };
 
+        const getDefaultAsc = (colId) => {
+            const col = columnsDef.find(c => c.id === colId);
+            return col && col.defaultAsc !== undefined ? col.defaultAsc : ['startup', 'active', 'recovery', 'total'].includes(colId);
+        };
+
         // ── Format helpers ──
         const formatAdv = (val) => {
             if (val === '-' || val === '' || val === undefined) return val || '-';
-            const n = parseInt(val);
+            const n = parseInt(val, 10);
             return isNaN(n) ? val : (n > 0 ? `+${n}` : `${n}`);
         };
         const advClass = (val) => {
             if (val === '-' || val === '' || val === undefined) return '';
-            const n = parseInt(val);
+            const n = parseInt(val, 10);
             if (isNaN(n)) return '';
             return n > 0 ? 'adv-positive' : n < 0 ? 'adv-negative' : 'adv-zero';
         };
 
+        let charList = [];
+
+        function updateAddCharSelect() {
+            const addSel = document.getElementById('add-char-select');
+            if (!addSel) return;
+            const avail = charList.filter(c => c.id !== state.mainChar && !state.addedChars.includes(c.id));
+            addSel.innerHTML = `<option value="">＋ 比較するキャラクターを選択...</option>` +
+                avail.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            addSel.value = '';
+        }
+
+        function updateSortUI() {
+            const sortSel = document.getElementById('sort-select');
+            const sortDirBtn = document.getElementById('btn-sort-dir');
+            if (sortSel && sortSel.value !== state.sortBy) {
+                sortSel.value = state.sortBy;
+            }
+            if (sortDirBtn) {
+                if (state.sortBy === 'default') {
+                    sortDirBtn.classList.add('hidden');
+                } else {
+                    sortDirBtn.classList.remove('hidden');
+                    sortDirBtn.textContent = state.sortAsc ? '▲ 昇順' : '▼ 降順';
+                }
+            }
+        }
+
         // ── Init ──
         document.addEventListener('DOMContentLoaded', () => {
-            const charList = Object.values(characters).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+            charList = Object.values(characters).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
             document.getElementById('charCount').textContent = `${charList.length}`;
 
             const sel = document.getElementById('main-char-select');
@@ -1017,11 +1130,64 @@
             if (characters[state.mainChar]) sel.value = state.mainChar;
             else if (charList.length > 0) { state.mainChar = charList[0].id; sel.value = state.mainChar; }
 
+            updateAddCharSelect();
             initTypeChips();
             initColumnToggles();
 
-            sel.addEventListener('change', (e) => { state.mainChar = e.target.value; saveState(); renderTable(); });
-            document.getElementById('sort-select').addEventListener('change', (e) => { state.sortBy = e.target.value; renderTable(); });
+            sel.addEventListener('change', (e) => {
+                state.mainChar = e.target.value;
+                state.addedChars = state.addedChars.filter(id => id !== state.mainChar);
+                saveState();
+                updateAddCharSelect();
+                renderAddedChars();
+                renderTable();
+            });
+
+            document.getElementById('add-char-select').addEventListener('change', (e) => {
+                const targetId = e.target.value;
+                if (targetId && targetId !== state.mainChar && !state.addedChars.includes(targetId)) {
+                    state.addedChars.push(targetId);
+                    updateAddCharSelect();
+                    renderAddedChars();
+                    renderTable();
+                }
+            });
+
+            document.getElementById('btn-clear-chars').addEventListener('click', () => {
+                state.addedChars = [];
+                updateAddCharSelect();
+                renderAddedChars();
+                renderTable();
+            });
+
+            document.getElementById('sort-select').addEventListener('change', (e) => {
+                state.sortBy = e.target.value;
+                state.sortAsc = getDefaultAsc(state.sortBy);
+                updateSortUI();
+                renderTable();
+            });
+
+            document.getElementById('btn-sort-dir').addEventListener('click', () => {
+                if (state.sortBy === 'default') return;
+                state.sortAsc = !state.sortAsc;
+                updateSortUI();
+                renderTable();
+            });
+
+            document.getElementById('table-header-row').addEventListener('click', (e) => {
+                const th = e.target.closest('th[data-sort]');
+                if (!th) return;
+                const colId = th.dataset.sort;
+                if (state.sortBy === colId) {
+                    state.sortAsc = !state.sortAsc;
+                } else {
+                    state.sortBy = colId;
+                    state.sortAsc = getDefaultAsc(colId);
+                }
+                updateSortUI();
+                renderTable();
+            });
+
             document.getElementById('column-toggles').addEventListener('change', (e) => {
                 if (e.target.tagName === 'INPUT' && e.target.dataset.col) {
                     state.visibleColumns[e.target.dataset.col] = e.target.checked;
@@ -1033,10 +1199,6 @@
             document.getElementById('search-input').addEventListener('input', (e) => {
                 clearTimeout(t);
                 t = setTimeout(() => { state.searchQuery = e.target.value.trim().toLowerCase(); renderTable(); }, 150);
-            });
-            document.getElementById('btn-add-char').addEventListener('click', () => {
-                const avail = charList.filter(c => c.id !== state.mainChar && !state.addedChars.includes(c.id));
-                if (avail.length > 0) { state.addedChars.push(avail[0].id); renderAddedChars(); renderTable(); }
             });
             document.getElementById('btn-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
@@ -1103,6 +1265,7 @@
             list.querySelectorAll('.tag-close').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     state.addedChars = state.addedChars.filter(id => id !== e.target.dataset.id);
+                    updateAddCharSelect();
                     renderAddedChars();
                     renderTable();
                 });
@@ -1115,7 +1278,16 @@
             const activeCols = columnsDef.filter(c => state.visibleColumns[c.id]);
 
             let th = '<th>キャラ</th><th>技名</th>';
-            activeCols.forEach(col => { th += `<th>${col.label}</th>`; });
+            activeCols.forEach(col => {
+                if (col.sortable) {
+                    const isSorted = state.sortBy === col.id;
+                    const arrow = isSorted ? (state.sortAsc ? ' ▲' : ' ▼') : '';
+                    const cls = isSorted ? 'sortable sort-active' : 'sortable';
+                    th += `<th class="${cls}" data-sort="${col.id}" title="クリックで並べ替え">${col.label}${arrow}</th>`;
+                } else {
+                    th += `<th>${col.label}</th>`;
+                }
+            });
             headerRow.innerHTML = th;
 
             let allMoves = [];
@@ -1130,13 +1302,17 @@
             });
 
             if (state.sortBy !== 'default') {
-                const pv = (v) => { if (v == null || v === '-' || v === '') return null; const m = String(v).trim().match(/^(-?\d+)/); return m ? parseInt(m[1]) : null; };
+                const pv = (v) => {
+                    if (v == null || v === '-' || v === '') return null;
+                    const m = String(v).trim().match(/([+-]?\d+)/);
+                    return m ? parseInt(m[1], 10) : null;
+                };
                 allMoves.sort((a, b) => {
                     let va = pv(a[state.sortBy]), vb = pv(b[state.sortBy]);
                     if (va === null && vb === null) return 0;
                     if (va === null) return 1;
                     if (vb === null) return -1;
-                    return ['startup', 'active', 'total'].includes(state.sortBy) ? va - vb : vb - va;
+                    return state.sortAsc ? va - vb : vb - va;
                 });
             }
 

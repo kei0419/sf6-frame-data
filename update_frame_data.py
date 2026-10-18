@@ -81,6 +81,14 @@ HEADERS = {
 
 def get_text_clean(td):
     """tdからテキストを取得してクリーンアップ"""
+    # 持続フレーム等で <label> と <div class="frame_ex..."> に分かれている場合
+    label = td.find("label")
+    ex_div = td.find("div", class_=lambda c: c and "frame_ex" in c)
+    if label and ex_div:
+        l_txt = label.get_text(strip=True)
+        e_txt = ex_div.get_text(strip=True)
+        return f"{l_txt} ({e_txt})" if e_txt else l_txt
+
     # <li> 要素がある場合、カンマ区切りで結合
     lis = td.find_all("li")
     if lis:
@@ -109,51 +117,60 @@ def parse_move_name(td):
     if cmd_ps:
         # すべてのclassicコマンドpタグからトークンを収集
         tokens = []
-        for cmd_p in cmd_ps:
-            # 複数のpタグがある場合、タグ間にARROW(＞)がないなら自動でARROWを追加することを検討するか、
-            # あるいは単にトークンを繋げる。大抵はpタグ内にすべての遷移が含まれるはずだが、
-            # 分かれているケース(EdのSA1など)への対策。
+        for p_idx, cmd_p in enumerate(cmd_ps):
+            if p_idx > 0 and tokens:
+                last_val = tokens[-1][1].strip()
+                if not last_val.endswith("/") and not last_val.endswith("＞"):
+                    tokens.append(("TEXT", " / "))
             for child in cmd_p.children:
                 if hasattr(child, "name") and child.name == "img":
                     src = child.get("src", "")
                     alt = child.get("alt", "")
-                    if "key-d.png" in src:     tokens.append(("DIR", "2"))
-                    elif "key-dr.png" in src:  tokens.append(("DIR", "3"))
-                    elif "key-dl.png" in src:  tokens.append(("DIR", "1"))
-                    elif "key-r.png" in src:   tokens.append(("DIR", "6"))
-                    elif "key-l.png" in src:   tokens.append(("DIR", "4"))
-                    elif "key-u.png" in src:   tokens.append(("DIR", "8"))
-                    elif "key-ur.png" in src:  tokens.append(("DIR", "9"))
-                    elif "key-ul.png" in src:  tokens.append(("DIR", "7"))
-                    elif "key-plus.png" in src: tokens.append(("PLUS", "＋"))
-                    elif "key-lc" in src:      tokens.append(("TEXT", "[溜]"))
-                    elif "key-dc" in src:      tokens.append(("TEXT", "[溜]"))
-                    elif "arrow_3" in src:     tokens.append(("ARROW", "＞"))
-                    elif "punch_l" in src:     tokens.append(("BTN", "弱P"))
-                    elif "punch_m" in src:     tokens.append(("BTN", "中P"))
-                    elif "punch_h" in src:     tokens.append(("BTN", "強P"))
-                    elif "kick_l" in src:      tokens.append(("BTN", "弱K"))
-                    elif "kick_m" in src:      tokens.append(("BTN", "中K"))
-                    elif "kick_h" in src:      tokens.append(("BTN", "強K"))
-                    elif "punch.png" in src:   tokens.append(("BTN", "P"))
-                    elif "kick.png" in src:    tokens.append(("BTN", "K"))
-                    elif alt:                  tokens.append(("TEXT", alt))
+                    if "key-d.png" in src:       tokens.append(("DIR", "2"))
+                    elif "key-dr.png" in src:    tokens.append(("DIR", "3"))
+                    elif "key-dl.png" in src:    tokens.append(("DIR", "1"))
+                    elif "key-r.png" in src:     tokens.append(("DIR", "6"))
+                    elif "key-l.png" in src:     tokens.append(("DIR", "4"))
+                    elif "key-u.png" in src:     tokens.append(("DIR", "8"))
+                    elif "key-ur.png" in src:    tokens.append(("DIR", "9"))
+                    elif "key-ul.png" in src:    tokens.append(("DIR", "7"))
+                    elif "key-plus.png" in src:  tokens.append(("PLUS", "＋"))
+                    elif "key-lc" in src:        tokens.append(("DIR", "4[溜]"))
+                    elif "key-dc" in src:        tokens.append(("DIR", "2[溜]"))
+                    elif "key-dlc" in src:       tokens.append(("DIR", "1[溜]"))
+                    elif "key-circle" in src:    tokens.append(("DIR", "[1回転]"))
+                    elif "key-nutral" in src or "key-neutral" in src:
+                        tokens.append(("DIR", "N"))
+                    elif "key-or.png" in src:    tokens.append(("TEXT", " or "))
+                    elif "arrow_3" in src:       tokens.append(("ARROW", "＞"))
+                    elif "punch_l" in src:       tokens.append(("BTN", "弱P"))
+                    elif "punch_m" in src:       tokens.append(("BTN", "中P"))
+                    elif "punch_h" in src:       tokens.append(("BTN", "強P"))
+                    elif "kick_l" in src:        tokens.append(("BTN", "弱K"))
+                    elif "kick_m" in src:        tokens.append(("BTN", "中K"))
+                    elif "kick_h" in src:        tokens.append(("BTN", "強K"))
+                    elif "punch.png" in src:     tokens.append(("BTN", "P"))
+                    elif "kick.png" in src:      tokens.append(("BTN", "K"))
+                    elif alt:                    tokens.append(("TEXT", alt))
                 elif hasattr(child, "string") and child.string:
-                    t = child.string.strip()
+                    t = re.sub(r"\s+", " ", child.string).strip()
                     if t: tokens.append(("TEXT", t))
                 elif isinstance(child, str):
-                    t = child.strip()
+                    t = re.sub(r"\s+", " ", child).strip()
                     if t: tokens.append(("TEXT", t))
 
         # トークンリストのクリーンアップ: 空文字や空白のみのテキストを除去
         tokens = [(ttype, tval) for ttype, tval in tokens if tval.strip()]
 
-        # 冗長な強度のテキスト("弱", "中", "強")をフィルタリング
+        # 冗長な強度のテキスト("弱", "中", "強" または "弱ホールド" 等の先頭重複)をフィルタリング
         filtered_tokens = []
         for i, (ttype, tval) in enumerate(tokens):
-            if ttype == "TEXT" and tval in ("弱", "中", "強"):
-                if i > 0 and tokens[i-1][0] == "BTN" and tokens[i-1][1].startswith(tval):
-                    continue
+            if ttype == "TEXT" and i > 0 and tokens[i - 1][0] == "BTN":
+                prev_btn = tokens[i - 1][1]
+                if prev_btn[0] in ("弱", "中", "強") and tval.startswith(prev_btn[0]):
+                    tval = tval[1:].strip()
+                    if not tval:
+                        continue
             filtered_tokens.append((ttype, tval))
         tokens = filtered_tokens
 
@@ -166,32 +183,17 @@ def parse_move_name(td):
             prev_type, prev_val = tokens[i - 1]
             
             if ttype == "DIR":
-                # 方向キー同士、または＋や＞の直後はそのまま
-                if prev_type in ("DIR", "PLUS", "ARROW"):
-                    result += tval
-                else:
-                    result += tval
+                result += tval
             elif ttype in ("PLUS", "ARROW") or (ttype == "TEXT" and tval in (">", "＞", "＋", "+")):
-                # 記号は詰める
                 result += tval
             elif ttype == "BTN":
                 if prev_type == "DIR":
                     result += "＋" + tval
-                elif prev_type == "BTN":
-                    # ボタン同士は常に詰める
-                    result += tval
-                elif prev_type in ("PLUS", "ARROW"):
-                    result += tval
                 else:
-                    result += tval # その他も詰める
+                    result += tval
             else:  # TEXT
-                if prev_type in ("PLUS", "ARROW", "DIR"):
-                    result += tval
-                elif tval.startswith("["): # [溜] など
-                    result += tval
-                else:
-                    result += tval # 基本的に全て詰める
-        cmd = result
+                result += tval
+        cmd = result.replace("[1回転][1回転]", "[2回転]").replace("/ ", " / ").replace("  ", " ").strip()
 
     return name, cmd
 
