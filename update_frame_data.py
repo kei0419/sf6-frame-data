@@ -266,8 +266,39 @@ def scrape_character(session, char_id):
 
         moves.append(move)
 
+    apply_custom_patches(char_id, moves)
     print(f"✅ {len(moves)}技")
     return moves
+
+
+def apply_custom_patches(char_id, moves):
+    """公式表に記載がない手調べフレームデータ等を補完する（再スクレイピング時も維持）"""
+    if char_id == "arjun":
+        normal_note = "※飛び道具発生F(手調べ): ホールド無し77F(全体55F+22F) / ホールド有り101F(全体55F+46F)"
+        od_note = "※飛び道具発生F(手調べ): ホールド無し62F(全体50F+12F) / ホールド有り96F(全体50F+46F)"
+        for m in moves:
+            name = m.get("name", "")
+            if name == "神気の巨巌(飛び道具)":
+                if not m.get("startup"):
+                    m["startup"] = "77 (ホールド101)"
+                old_n = m.get("notes", "")
+                if normal_note not in old_n:
+                    m["notes"] = f"{normal_note}、 {old_n}" if old_n else normal_note
+            elif name == "OD 神気の巨巌(飛び道具)":
+                if not m.get("startup"):
+                    m["startup"] = "62 (ホールド96)"
+                old_n = m.get("notes", "")
+                if od_note not in old_n:
+                    m["notes"] = f"{od_note}、 {old_n}" if old_n else od_note
+            elif name in ("弱 神気の巨巌", "中 神気の巨巌", "強 神気の巨巌"):
+                old_n = m.get("notes", "")
+                if normal_note not in old_n:
+                    m["notes"] = f"{old_n}、 {normal_note}" if old_n else normal_note
+            elif name in ("OD 弱 神気の巨巌", "OD 中 神気の巨巌", "OD 強 神気の巨巌"):
+                old_n = m.get("notes", "")
+                if od_note not in old_n:
+                    m["notes"] = f"{old_n}、 {od_note}" if old_n else od_note
+
 
 
 def update_sw_cache_version():
